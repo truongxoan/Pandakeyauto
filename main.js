@@ -1244,9 +1244,9 @@ ipcMain.handle('update-recoil-config', async (event, config = {}) => {
   return { success: true, config: recoilConfig };
 });
 
-// ================= 📱 KÉO GIÃN MÀN HÌNH TỈ LỆ IPAD 4:3 =================
-ipcMain.handle('set-ipad-view', async (event, { width = 1440, height = 1920, density = 320, deviceId } = {}) => {
-  const target = deviceId ? `-s "${deviceId}"` : '';
+// ================= 📐 CAN THIỆP MÀN HÌNH: 21:9 ULTRAWIDE & IPAD 4:3 (DISPLAY RESOLUTION HACK) =================
+ipcMain.handle('set-ipad-view', async (event, { width = 1080, height = 2520, density = 420, deviceId, modeTitle = 'Tỉ lệ màn hình' } = {}) => {
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
   return new Promise((resolve) => {
     let cmd = `"${adbPath}" ${target} shell "wm size ${width}x${height}`;
     if (density && Number(density) > 0) {
@@ -1255,32 +1255,43 @@ ipcMain.handle('set-ipad-view', async (event, { width = 1440, height = 1920, den
       cmd += `"`;
     }
     exec(cmd, { windowsHide: true }, (err) => {
-      if (err) return resolve({ success: false, message: 'Lỗi chỉnh màn hình iPad: ' + err.message });
+      if (err) return resolve({ success: false, message: 'Lỗi chỉnh độ phân giải: ' + err.message });
       showOsdNotification({
-        icon: '📱',
-        game: 'TỈ LỆ IPAD 4:3',
+        icon: '📐',
+        game: modeTitle.toUpperCase(),
         badge: `${width}×${height}`,
-        mode: 'Góc nhìn mở rộng chuẩn tuyển thủ',
-        specs: `DPI: ${density || 'Mặc định'} • Hình địch to dễ headshot`
+        mode: 'Mở rộng tầm nhìn hiển thị (FOV)',
+        specs: `DPI: ${density || 'Mặc định'} • Can thiệp SurfaceFlinger thành công`
       });
-      resolve({ success: true, message: `Đã chỉnh tỉ lệ iPad ${width}×${height} (DPI ${density || 'Mặc định'}) thành công!` });
+      sendLog(`📐 [Display Hack] Đã áp dụng ${modeTitle} (${width}×${height}, DPI ${density || 'Mặc định'})`);
+      resolve({ success: true, message: `Đã can thiệp thành công: ${modeTitle} (${width}×${height}, DPI ${density || 'Mặc định'})!` });
     });
   });
 });
 
 ipcMain.handle('reset-ipad-view', async (event, { deviceId } = {}) => {
-  const target = deviceId ? `-s "${deviceId}"` : '';
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
   return new Promise((resolve) => {
     exec(`"${adbPath}" ${target} shell "wm size reset && wm density reset"`, { windowsHide: true }, (err) => {
       if (err) return resolve({ success: false, message: 'Lỗi khôi phục màn hình: ' + err.message });
       showOsdNotification({
         icon: '📱',
-        game: 'MÀN HÌNH GỐC',
+        game: 'ĐỘ PHÂN GIẢI GỐC',
         badge: 'Khôi Phục',
-        mode: 'Đã hoàn trả tỉ lệ gốc điện thoại',
-        specs: 'Độ phân giải mặc định của máy'
+        mode: 'Đã hoàn trả tỉ lệ mặc định của điện thoại',
+        specs: '100% độ phân giải gốc của máy'
       });
-      resolve({ success: true, message: 'Đã khôi phục màn hình điện thoại về mặc định!' });
+      sendLog('📱 [Display Hack] Đã khôi phục màn hình điện thoại về độ phân giải mặc định.');
+      resolve({ success: true, message: 'Đã khôi phục màn hình điện thoại về độ phân giải gốc!' });
+    });
+  });
+});
+
+ipcMain.handle('get-display-resolution', async (event, { deviceId } = {}) => {
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+  return new Promise((resolve) => {
+    exec(`"${adbPath}" ${target} shell "wm size && wm density"`, { windowsHide: true }, (err, stdout) => {
+      resolve({ success: !err, output: (stdout || '').trim() });
     });
   });
 });

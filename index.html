@@ -454,38 +454,40 @@
                 </div>
               </div>
 
-              <!-- 2. KÉO GIÃN MÀN HÌNH TỈ LỆ IPAD (4:3) -->
+              <!-- 2. CAN THIỆP MÀN HÌNH: 21:9 ULTRAWIDE & IPAD 4:3 (DISPLAY RESOLUTION HACK) -->
               <div class="combat-feature-item">
                 <div class="feature-item-header">
                   <div class="feature-item-title">
-                    <span class="item-emoji">📱</span>
-                    <strong>Góc Nhìn iPad 4:3 (iPad View)</strong>
+                    <span class="item-emoji">📐</span>
+                    <strong>Tầm Nhìn 21:9 UltraWide & iPad 4:3</strong>
                   </div>
                   <div class="toggle-switch-wrapper">
                     <span class="switch-state-text" id="lblIpadState">TẮT</span>
-                    <button class="btn-toggle-switch" id="btnToggleIpadSwitch" title="Bật/Tắt góc nhìn iPad 4:3">
+                    <button class="btn-toggle-switch" id="btnToggleIpadSwitch" title="Bật/Tắt can thiệp tỉ lệ màn hình">
                       <span class="switch-ball"></span>
                     </button>
                   </div>
                 </div>
-                <p class="feature-item-desc">Mở rộng góc nhìn FOV sang tỉ lệ 4:3 như máy tính bảng, nhân vật địch to hơn 40%, cực kỳ dễ headshot.</p>
+                <p class="feature-item-desc">Can thiệp SurfaceFlinger trực tiếp qua ADB: Mở rộng <strong>30% tầm nhìn ngoại vi (21:9 UltraWide)</strong> hoặc phóng to địch dễ headshot (<strong>iPad 4:3</strong>).</p>
                 
                 <div class="ipad-controls-box">
                   <div class="form-row-compact">
                     <select id="selIpadPreset" class="select-modern">
-                      <option value="1440x1920" selected>iPad Mini / Pro 4:3 (1440 × 1920) - Chuẩn Thi Đấu</option>
-                      <option value="1536x2048">iPad 4:3 Retina (1536 × 2048) - Siêu Nét</option>
-                      <option value="1600x2560">iPad Air 16:10 (1600 × 2560) - Tầm Nhìn Cân Bằng</option>
-                      <option value="custom">Tùy Chỉnh Độ Phân Giải...</option>
+                      <option value="1080x2520" selected>🖥️ 21:9 UltraWide Gaming (1080 × 2520) - Mở Rộng 30% Tầm Nhìn</option>
+                      <option value="1440x3360">🖥️ 21:9 UltraWide 2K (1440 × 3360) - Siêu Nét Rộng Tối Đa</option>
+                      <option value="1440x1920">📱 iPad Pro 4:3 (1440 × 1920) - Chuẩn Thi Đấu (Địch To Dễ Bắn)</option>
+                      <option value="1536x2048">📱 iPad Retina 4:3 (1536 × 2048) - Căng Tròn Khung Hình</option>
+                      <option value="1080x1920">⚡ Chuẩn 16:9 Esports (1080 × 1920) - Khung Hình Tiêu Chuẩn</option>
+                      <option value="custom">🛠️ Tùy Chỉnh Độ Phân Giải & DPI...</option>
                     </select>
                   </div>
                   <div class="ipad-custom-inputs" id="boxIpadCustom" style="display: none;">
-                    <input type="number" id="txtIpadWidth" placeholder="Rộng (VD: 1440)" value="1440">
-                    <input type="number" id="txtIpadHeight" placeholder="Cao (VD: 1920)" value="1920">
-                    <input type="number" id="txtIpadDensity" placeholder="DPI (VD: 320)" value="320">
+                    <input type="number" id="txtIpadWidth" placeholder="Rộng (VD: 1080)" value="1080">
+                    <input type="number" id="txtIpadHeight" placeholder="Cao (VD: 2520)" value="2520">
+                    <input type="number" id="txtIpadDensity" placeholder="DPI (VD: 420)" value="420">
                   </div>
                   <div class="ipad-btn-row">
-                    <button class="btn-action btn-action-sm btn-glow-action" id="btnApplyIpadView">⚡ Áp Dụng Tỉ Lệ iPad</button>
+                    <button class="btn-action btn-action-sm btn-glow-action" id="btnApplyIpadView">⚡ Áp Dụng Tỉ Lệ Mới</button>
                     <button class="btn-action btn-action-sm btn-outline" id="btnResetIpadView">Khôi Phục Gốc</button>
                     <span class="status-chip" id="ipadViewStatus" style="margin-left:auto; align-self:center;">Tỉ lệ gốc</span>
                   </div>

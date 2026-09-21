@@ -49,9 +49,10 @@ contextBridge.exposeInMainWorld('api', {
   toggleRecoil: (payload) => ipcRenderer.invoke('toggle-recoil', payload),
   updateRecoilConfig: (payload) => ipcRenderer.invoke('update-recoil-config', payload),
 
-  // 📱 iPad Screen View (4:3) APIs
+  // 📱 21:9 UltraWide & iPad Screen View APIs
   setIpadView: (payload) => ipcRenderer.invoke('set-ipad-view', payload),
   resetIpadView: (payload) => ipcRenderer.invoke('reset-ipad-view', payload),
+  getDisplayResolution: (payload) => ipcRenderer.invoke('get-display-resolution', payload),
 
   // 🔁 Auto Farm / Touch Macro Recorder APIs
   startMacroRecord: () => ipcRenderer.invoke('start-macro-record'),

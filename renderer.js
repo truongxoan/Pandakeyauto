@@ -1336,23 +1336,46 @@ if (elSelIpadPreset) {
 
 if (elBtnApplyIpadView) {
   elBtnApplyIpadView.addEventListener('click', async () => {
-    let width = 1440, height = 1920, density = 320;
+    let width = 1080, height = 2520, density = 420;
+    let modeTitle = '21:9 UltraWide Gaming';
+
     if (elSelIpadPreset.value === 'custom') {
-      width = parseInt(elTxtIpadWidth.value) || 1440;
-      height = parseInt(elTxtIpadHeight.value) || 1920;
-      density = parseInt(elTxtIpadDensity.value) || 320;
+      width = parseInt(elTxtIpadWidth.value) || 1080;
+      height = parseInt(elTxtIpadHeight.value) || 2520;
+      density = parseInt(elTxtIpadDensity.value) || 420;
+      modeTitle = `Tùy Chỉnh (${width}×${height})`;
     } else {
       const parts = elSelIpadPreset.value.split('x');
-      width = parseInt(parts[0]) || 1440;
-      height = parseInt(parts[1]) || 1920;
-      density = (width >= 1536) ? 360 : 320;
+      width = parseInt(parts[0]) || 1080;
+      height = parseInt(parts[1]) || 2520;
+
+      if (width === 1080 && height === 2520) {
+        density = 420;
+        modeTitle = '21:9 UltraWide Gaming';
+      } else if (width === 1440 && height === 3360) {
+        density = 540;
+        modeTitle = '21:9 UltraWide 2K';
+      } else if (width === 1440 && height === 1920) {
+        density = 320;
+        modeTitle = 'iPad Pro 4:3';
+      } else if (width === 1536 && height === 2048) {
+        density = 360;
+        modeTitle = 'iPad Retina 4:3';
+      } else if (width === 1080 && height === 1920) {
+        density = 400;
+        modeTitle = 'Esports 16:9';
+      } else {
+        density = (width >= 1440) ? 440 : 360;
+        modeTitle = `${width}×${height}`;
+      }
     }
-    updateFooterLog(`Đang chỉnh màn hình sang tỉ lệ iPad ${width}×${height}...`);
-    const res = await window.api.setIpadView({ width, height, density, deviceId: currentDeviceId });
+
+    updateFooterLog(`📐 Đang can thiệp SurfaceFlinger sang [${modeTitle}]...`);
+    const res = await window.api.setIpadView({ width, height, density, deviceId: currentDeviceId, modeTitle });
     updateFooterLog(res.message);
     if (res.success) {
       if (elIpadViewStatus) {
-        elIpadViewStatus.textContent = `iPad (${width}×${height})`;
+        elIpadViewStatus.textContent = modeTitle;
         elIpadViewStatus.classList.add('active');
       }
       updateIpadSwitchUI(true);
