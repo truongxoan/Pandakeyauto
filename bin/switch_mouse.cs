@@ -643,6 +643,21 @@ public class SwitchMouse {
             ClipCursor(IntPtr.Zero);
             RestorePcMouseSpeed();
             Console.WriteLine("PC_SPEED_RESTORED");
+        } else if (args != null && args.Length > 0 && args[0] == "--get-scrcpy-rect") {
+            IntPtr scrcpyHwnd = GetScrcpyWindow();
+            if (scrcpyHwnd != IntPtr.Zero) {
+                RECT r;
+                GetWindowRect(scrcpyHwnd, out r);
+                int w = r.Right - r.Left;
+                int h = r.Bottom - r.Top;
+                Console.WriteLine(string.Format("{0} {1} {2} {3}", r.Left, r.Top, w, h));
+            } else {
+                Console.WriteLine("NOT_FOUND");
+            }
+        } else if (args != null && args.Length > 0 && args[0] == "--release") {
+            IntPtr scrcpyHwnd = GetScrcpyWindow();
+            ReleaseToPc(scrcpyHwnd);
+            Console.WriteLine("RELEASED_TO_PC");
         } else {
             Toggle();
         }

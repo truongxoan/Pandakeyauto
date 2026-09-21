@@ -115,51 +115,73 @@ const adbPath = path.join(binDir, 'adb.exe');
 const scrcpyPath = path.join(binDir, 'scrcpy.exe');
 keymapper = new Keymapper(customUserDataPath, adbPath);
 
-// ================= ⌨️ NATIVE KEYMAP HUD OVERLAY =================
-function createKeymapOverlayWindow() {
-  if (keymapOverlayWindow) return;
-
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.bounds;
-
-  keymapOverlayWindow = new BrowserWindow({
-    width: width,
-    height: height,
-    x: 0,
-    y: 0,
-    show: false,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    focusable: true,
-    resizable: false,
-    hasShadow: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  keymapOverlayWindow.loadFile(path.join(__dirname, 'keymap_overlay.html'));
-
-  keymapOverlayWindow.on('closed', () => {
-    keymapOverlayWindow = null;
+// ================= ⌨️ NATIVE KEYMAP HUD OVERLAY TRONG GAME (F12) =================
+function getScrcpyWindowBounds() {
+  return new Promise((resolve) => {
+    execFile(path.join(binDir, 'switch_mouse.exe'), ['--get-scrcpy-rect'], { windowsHide: true }, (err, stdout) => {
+      const out = (stdout || '').trim();
+      if (!err && out && !out.includes('NOT_FOUND')) {
+        const parts = out.split(' ').map(Number);
+        if (parts.length === 4 && parts[2] > 100 && parts[3] > 100) {
+          return resolve({ x: parts[0], y: parts[1], width: parts[2], height: parts[3] });
+        }
+      }
+      const primaryDisplay = screen.getPrimaryDisplay();
+      resolve(primaryDisplay.bounds);
+    });
   });
 }
 
-function toggleKeymapOverlay(enable) {
+async function toggleKeymapOverlay(enable) {
   if (enable === undefined) {
     enable = !keymapOverlayWindow;
   }
   if (enable) {
-    if (!keymapOverlayWindow) {
-      createKeymapOverlayWindow();
+    const bounds = await getScrcpyWindowBounds();
+
+    try {
+      execFile(path.join(binDir, 'switch_mouse.exe'), ['--release'], { windowsHide: true });
+    } catch (e) {}
+
+    if (!keymapOverlayWindow || keymapOverlayWindow.isDestroyed()) {
+      keymapOverlayWindow = new BrowserWindow({
+        width: bounds.width,
+        height: bounds.height,
+        x: bounds.x,
+        y: bounds.y,
+        show: false,
+        transparent: true,
+        frame: false,
+        alwaysOnTop: true,
+        skipTaskbar: true,
+        focusable: true,
+        resizable: false,
+        hasShadow: false,
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false
+        }
+      });
+
+      keymapOverlayWindow.loadFile(path.join(__dirname, 'keymap_overlay.html'));
+
+      keymapOverlayWindow.on('closed', () => {
+        keymapOverlayWindow = null;
+      });
+    } else {
+      keymapOverlayWindow.setBounds(bounds);
     }
-    if (keymapOverlayWindow) {
-      keymapOverlayWindow.show();
-      keymapOverlayWindow.focus();
-    }
+
+    keymapOverlayWindow.show();
+    keymapOverlayWindow.focus();
+
+    showOsdNotification({
+      icon: '🎮',
+      game: 'CHẾ ĐỘ GÁN PHÍM TRONG GAME',
+      badge: 'F12 ĐANG BẬT',
+      mode: 'Kéo thả các nút phím ảo đè lên game',
+      specs: 'Bấm F12 hoặc Lưu Layout để chơi tiếp'
+    });
   } else {
     if (keymapOverlayWindow) {
       keymapOverlayWindow.close();
@@ -239,6 +261,13 @@ function createWindow() {
   try {
     globalShortcut.register('F9', () => {
       try { captureInstantScreenshot(); } catch (e) {}
+    });
+  } catch (e) {}
+
+  // 5. Phím tắt F12 toàn cục: Mở/Đóng Chế Độ Gán Phím Trực Tiếp Trong Game
+  try {
+    globalShortcut.register('F12', () => {
+      try { toggleKeymapOverlay(); } catch (e) {}
     });
   } catch (e) {}
 

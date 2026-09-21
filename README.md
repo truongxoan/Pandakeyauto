@@ -117,6 +117,7 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
 | <kbd>F6</kbd> | **Bật / Tắt Ghìm Tâm Tự Động (Recoil Control VIP)** |
 | <kbd>F7</kbd> | **Bật / Tắt Tuyệt Kỹ Bắn Tỉa Siêu Tốc (Quick-Switch Sniper AWM)** |
 | <kbd>F9</kbd> | **Chụp Ngay Ảnh Khoảnh Khắc Highlight (Instant Screenshot)** |
+| <kbd>F12</kbd> | **Mở / Đóng Chế Độ Gán Phím Trực Tiếp Trong Game (In-Game Keymap HUD)** |
 | <kbd>Alt</kbd> + <kbd>Right</kbd> | **Chế Độ Tiếp Theo** (Next Game Mode) kèm HUD nổi |
 | <kbd>Alt</kbd> + <kbd>Left</kbd> | **Chế Độ Trước Đó** (Prev Game Mode) kèm HUD nổi |
 | <kbd>Alt</kbd> + <kbd>X</kbd> | **Boss Key**: Tắt màn hình ĐT (game vẫn chạy) & Ẩn cửa sổ PC |

@@ -234,15 +234,12 @@
   <div class="overlay-toolbar" id="overlayToolbar">
     <div class="toolbar-title">
       <span>🎮</span>
-      <span>KEYMAP HUD VIP</span>
+      <span>GÁN PHÍM TRONG GAME (F12)</span>
     </div>
-    <button class="btn-tool active" id="btnToggleEditMode" title="Chuyển đổi giữa kéo thả phím và xuyên thấu chuột">
-      <span id="txtEditMode">✏️ Đang Sửa Layout</span>
-    </button>
     <button class="btn-tool" id="btnAddKey" title="Thêm nút phím mới">➕ Thêm Phím</button>
-    <button class="btn-tool" id="btnSaveKeymap" title="Lưu lại cấu hình layout vào máy">💾 Lưu Layout</button>
+    <button class="btn-tool active" id="btnSaveKeymap" title="Lưu lại layout và quay lại chơi game (F12)">💾 Lưu & Chơi Tiếp (F12)</button>
     <button class="btn-tool" id="btnResetKeymap" title="Khôi phục layout mặc định của game">↺ Mặc Định</button>
-    <button class="btn-tool btn-tool-danger" id="btnCloseOverlay" title="Đóng cửa sổ overlay phím">✖ Đóng</button>
+    <button class="btn-tool btn-tool-danger" id="btnCloseOverlay" title="Đóng cửa sổ gán phím">✖ Đóng</button>
   </div>
 
   <!-- Keymap Nodes Container -->
@@ -433,13 +430,24 @@
       renderKeymap();
     });
 
-    elBtnSaveKeymap.addEventListener('click', async () => {
-      if (!currentKeymap) return;
-      try {
-        await ipcRenderer.invoke('save-current-keymap', currentKeymap);
-        alert('Đã lưu layout phím thành công!');
-      } catch (e) {
-        alert('Lỗi khi lưu layout: ' + e.message);
+    async function saveAndPlay() {
+      if (currentKeymap) {
+        try {
+          await ipcRenderer.invoke('save-current-keymap', currentKeymap);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      ipcRenderer.invoke('toggle-keymap-overlay', false);
+    }
+
+    elBtnSaveKeymap.addEventListener('click', saveAndPlay);
+
+    // Bấm F12 hoặc Escape trong Overlay để Lưu & Chơi tiếp
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'F12' || e.key === 'Escape') {
+        e.preventDefault();
+        saveAndPlay();
       }
     });
 
