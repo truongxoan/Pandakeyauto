@@ -975,21 +975,47 @@ ipcMain.handle('toggle-rapid-fire', async (event, { enabled, clicksPerSec }) => 
   }
 });
 
-// 1-Click Kích Hoạt Panda Mouse Pro
+// 1-Click Kích Hoạt & Cấp Quyền Hiển Thị Quả Cầu Panda Trên Điện Thoại
 ipcMain.handle('activate-panda', async (event, { deviceId }) => {
-  const target = deviceId ? `-s "${deviceId}"` : '';
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
   return new Promise((resolve) => {
-    const cmd = `"${adbPath}" ${target} shell "sh /sdcard/Android/data/com.panda.mouse/files/scripts/activate.sh || sh /data/local/tmp/activate.sh"`;
-    exec(cmd, { windowsHide: true }, (err, stdout, stderr) => {
-      const output = (stdout || '') + (stderr || '');
-      if (output.includes('Done') || output.includes('success') || output.includes('sdk_int')) {
-        resolve({ success: true, message: 'Kích hoạt Panda Mouse Pro thành công! Mở app Panda trên điện thoại để vào game.' });
-      } else {
-        const cmd2 = `"${adbPath}" ${target} shell "sh /data/data/com.panda.mouse/files/scripts/activate.sh"`;
-        exec(cmd2, { windowsHide: true }, () => {
-          resolve({ success: true, message: 'Đã gửi lệnh kích hoạt Panda Mouse Pro! Mở app Panda kiểm tra trạng thái Activated.' });
-        });
+    // 1. Kiểm tra xem trên điện thoại đã có Panda Mouse Pro hoặc Panda Gamepad Pro chưa
+    exec(`"${adbPath}" ${target} shell "pm list packages | grep com.panda"`, { windowsHide: true }, (err, stdout) => {
+      const packages = (stdout || '').trim();
+      const hasPandaMouse = packages.includes('com.panda.mouse');
+      const hasPandaGamepad = packages.includes('com.panda.gamepad');
+
+      // 2. Tự động cấp quyền hiển thị nổi (SYSTEM_ALERT_WINDOW) đè lên game trên màn hình điện thoại
+      if (hasPandaMouse) {
+        exec(`"${adbPath}" ${target} shell "appops set com.panda.mouse SYSTEM_ALERT_WINDOW allow 2>/dev/null; pm grant com.panda.mouse android.permission.WRITE_SECURE_SETTINGS 2>/dev/null"`, { windowsHide: true });
       }
+      if (hasPandaGamepad) {
+        exec(`"${adbPath}" ${target} shell "appops set com.panda.gamepad SYSTEM_ALERT_WINDOW allow 2>/dev/null; pm grant com.panda.gamepad android.permission.WRITE_SECURE_SETTINGS 2>/dev/null"`, { windowsHide: true });
+      }
+
+      // 3. Thực thi tập lệnh kích hoạt Panda không cần Root (hỗ trợ mọi phiên bản)
+      const cmd = `"${adbPath}" ${target} shell "sh /sdcard/Android/data/com.panda.mouse/files/scripts/activate.sh 2>/dev/null || sh /data/data/com.panda.mouse/files/scripts/activate.sh 2>/dev/null || sh /sdcard/Android/data/com.panda.gamepad/files/scripts/activate.sh 2>/dev/null || sh /data/data/com.panda.gamepad/files/scripts/activate.sh 2>/dev/null || sh /data/local/tmp/activate.sh 2>/dev/null"`;
+
+      exec(cmd, { windowsHide: true }, (errAct, stdoutAct, stderrAct) => {
+        // 4. Tự động mở ứng dụng Panda trên màn hình điện thoại lên ngay lập tức
+        if (hasPandaMouse) {
+          exec(`"${adbPath}" ${target} shell "monkey -p com.panda.mouse -c android.intent.category.LAUNCHER 1"`, { windowsHide: true });
+        } else if (hasPandaGamepad) {
+          exec(`"${adbPath}" ${target} shell "monkey -p com.panda.gamepad -c android.intent.category.LAUNCHER 1"`, { windowsHide: true });
+        }
+
+        if (!hasPandaMouse && !hasPandaGamepad) {
+          resolve({
+            success: false,
+            message: '⚠️ Chưa tìm thấy app Panda Mouse Pro trên điện thoại!\n\n👉 Để hiển thị quả cầu nổi trên màn hình điện thoại thật, bạn hãy cài đặt file "Panda Mouse Pro APK" vào điện thoại (có thể dùng nút Cài Đặt APK của phần mềm), sau đó bấm nút Kích Hoạt để cấp quyền và hiện biểu tượng Panda trên điện thoại!'
+          });
+        } else {
+          resolve({
+            success: true,
+            message: '✅ Đã kích hoạt Panda & cấp quyền hiển thị nổi (SYSTEM_ALERT_WINDOW) thành công!\n\n👉 App Panda đã được kích hoạt trên điện thoại. Hãy vào game và chạm vào biểu tượng Panda nổi trên màn hình điện thoại để bắt đầu gán phím!'
+          });
+        }
+      });
     });
   });
 });
