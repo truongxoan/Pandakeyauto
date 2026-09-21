@@ -93,9 +93,20 @@ contextBridge.exposeInMainWorld('api', {
   toggleFootstepBooster: (forceState) => ipcRenderer.invoke('toggle-footstep-booster', forceState),
   toggleDigitalVibrance: (payload) => ipcRenderer.invoke('toggle-digital-vibrance', payload),
 
+  // 🎯 Quick-Switch Sniper & 🛡️ Clutch Shield APIs
+  toggleQuickSniper: (forceState) => ipcRenderer.invoke('toggle-quick-sniper', forceState),
+  triggerQuickSniper: (payload) => ipcRenderer.invoke('trigger-quick-sniper', payload),
+  toggleClutchShield: (payload) => ipcRenderer.invoke('toggle-clutch-shield', payload),
+
+  // 📸 Instant Screenshot APIs
+  captureInstantScreenshot: (payload) => ipcRenderer.invoke('capture-instant-screenshot', payload),
+  openScreenshotsFolder: () => ipcRenderer.invoke('open-screenshots-folder'),
+
   // Core Events
   onRequestStartControl: (callback) => ipcRenderer.on('request-start-control', () => callback()),
   onOtgLog: (callback) => ipcRenderer.on('otg-log', (_event, value) => callback(value)),
   onOtgStatus: (callback) => ipcRenderer.on('otg-status', (_event, value) => callback(value)),
-  onRecoilToggled: (callback) => ipcRenderer.on('recoil-toggled-global', (_event, value) => callback(value))
+  onRecoilToggled: (callback) => ipcRenderer.on('recoil-toggled-global', (_event, value) => callback(value)),
+  onQuickSniperToggled: (callback) => ipcRenderer.on('quick-sniper-toggled-global', (_event, value) => callback(value)),
+  onScreenshotCaptured: (callback) => ipcRenderer.on('screenshot-captured', (_event, value) => callback(value))
 });

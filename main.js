@@ -52,6 +52,8 @@ let osdWindow = null;
 let keymapOverlayWindow = null;
 let isFootstepBoosterActive = false;
 let isDigitalVibranceActive = false;
+let isQuickSniperActive = false;
+let isClutchShieldActive = false;
 let keymapper = null;
 let controlProcess = null;
 let isScreenHidden = false;
@@ -223,6 +225,20 @@ function createWindow() {
   try {
     globalShortcut.register('F6', () => {
       try { toggleRecoilGlobal(); } catch (e) {}
+    });
+  } catch (e) {}
+
+  // 3. Phím tắt F7 toàn cục Bật/Tắt Tuyệt Kỹ Quick-Switch Sniper
+  try {
+    globalShortcut.register('F7', () => {
+      try { toggleQuickSniperGlobal(); } catch (e) {}
+    });
+  } catch (e) {}
+
+  // 4. Phím tắt F9 toàn cục Chụp ảnh khoảnh khắc Highlight
+  try {
+    globalShortcut.register('F9', () => {
+      try { captureInstantScreenshot(); } catch (e) {}
     });
   } catch (e) {}
 
@@ -1952,4 +1968,133 @@ ipcMain.handle('toggle-digital-vibrance', async (event, { forceState, deviceId }
   }
   return { success: true, active: isDigitalVibranceActive };
 });
+
+// ================= 🎯 QUICK-SWITCH SNIPER (AWM SIÊU TỐC) =================
+function toggleQuickSniperGlobal(forceState) {
+  isQuickSniperActive = forceState !== undefined ? !!forceState : !isQuickSniperActive;
+  if (isQuickSniperActive) {
+    showOsdNotification({
+      icon: '🎯',
+      game: 'QUICK-SWITCH SNIPER',
+      badge: 'BẬT (F7)',
+      mode: 'Tự Động Đổi Súng Khi Bắn',
+      specs: 'Bắn ➔ Đổi Dao (3) ➔ Đổi Súng (1) trong 0.05s'
+    });
+    sendLog('🎯 [VIP Sniper] Đã BẬT Quick-Switch Sniper (F7)');
+  } else {
+    showOsdNotification({
+      icon: '⚪',
+      game: 'QUICK-SWITCH SNIPER',
+      badge: 'TẮT (F7)',
+      mode: 'Bắn súng bình thường',
+      specs: 'Đã tắt tự động đổi súng'
+    });
+    sendLog('⚪ [VIP Sniper] Đã TẮT Quick-Switch Sniper (F7)');
+  }
+  sendSafe('quick-sniper-toggled-global', isQuickSniperActive);
+  return { success: true, active: isQuickSniperActive };
+}
+
+function triggerQuickSniperSwitch(deviceId) {
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+  setTimeout(() => {
+    exec(`"${adbPath}" ${target} shell input keyevent 10`, { windowsHide: true });
+    setTimeout(() => {
+      exec(`"${adbPath}" ${target} shell input keyevent 8`, { windowsHide: true });
+    }, 40);
+  }, 30);
+}
+
+ipcMain.handle('toggle-quick-sniper', async (event, forceState) => {
+  return toggleQuickSniperGlobal(forceState);
+});
+
+ipcMain.handle('trigger-quick-sniper', async (event, { deviceId } = {}) => {
+  triggerQuickSniperSwitch(deviceId);
+  return { success: true };
+});
+
+// ================= 🛡️ TOURNAMENT CLUTCH SHIELD (CHẾ ĐỘ TẬP TRUNG THI ĐẤU) =================
+function toggleClutchShieldGlobal(forceState, deviceId) {
+  isClutchShieldActive = forceState !== undefined ? !!forceState : !isClutchShieldActive;
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+
+  if (isClutchShieldActive) {
+    exec(`"${adbPath}" ${target} shell "cmd notification set_zen_mode 1"`, { windowsHide: true });
+    exec(`"${adbPath}" ${target} shell "settings put global heads_up_notifications_enabled 0"`, { windowsHide: true });
+    exec(`"${adbPath}" ${target} shell "settings put system accelerometer_rotation 0"`, { windowsHide: true });
+    showOsdNotification({
+      icon: '🛡️',
+      game: 'TOURNAMENT CLUTCH SHIELD',
+      badge: 'ĐÃ BẬT',
+      mode: 'Chế độ thi đấu tập trung 100%',
+      specs: 'Chặn cuộc gọi, tin nhắn Zalo/SMS & thông báo nổi'
+    });
+    sendLog('🛡️ [Thi Đấu] Đã BẬT Chế Độ Tập Trung (Clutch Shield)');
+  } else {
+    exec(`"${adbPath}" ${target} shell "cmd notification set_zen_mode 0"`, { windowsHide: true });
+    exec(`"${adbPath}" ${target} shell "settings put global heads_up_notifications_enabled 1"`, { windowsHide: true });
+    showOsdNotification({
+      icon: '⚪',
+      game: 'TOURNAMENT CLUTCH SHIELD',
+      badge: 'ĐÃ TẮT',
+      mode: 'Thông báo bình thường',
+      specs: 'Đã khôi phục chế độ nhận thông báo'
+    });
+    sendLog('⚪ [Thi Đấu] Đã TẮT Chế Độ Tập Trung');
+  }
+  return { success: true, active: isClutchShieldActive };
+}
+
+ipcMain.handle('toggle-clutch-shield', async (event, { forceState, deviceId } = {}) => {
+  return toggleClutchShieldGlobal(forceState, deviceId);
+});
+
+// ================= 📸 INSTANT SCREENSHOT & HIGHLIGHT CAPTURE (F9) =================
+function captureInstantScreenshot(deviceId) {
+  return new Promise((resolve) => {
+    const screenshotsDir = path.join(app.getPath('pictures'), 'Pandakeyauto');
+    if (!fs.existsSync(screenshotsDir)) {
+      try { fs.mkdirSync(screenshotsDir, { recursive: true }); } catch (e) {}
+    }
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `Highlight_${timestamp}.png`;
+    const filePath = path.join(screenshotsDir, filename);
+    const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+
+    sendLog(`📸 Đang chụp khoảnh khắc qua ADB: ${filename}...`);
+    exec(`"${adbPath}" ${target} exec-out screencap -p > "${filePath}"`, { windowsHide: true, encoding: 'binary' }, (err) => {
+      if (!err && fs.existsSync(filePath) && fs.statSync(filePath).size > 1000) {
+        showOsdNotification({
+          icon: '📸',
+          game: 'KHOẢNH KHẮC HIGHLIGHT',
+          badge: 'F9 THÀNH CÔNG',
+          mode: filename,
+          specs: `Đã lưu ảnh gốc vào thư mục Pictures\\Pandakeyauto`
+        });
+        sendLog(`📸 [Screenshot F9] Đã lưu khoảnh khắc thành công: ${filename}`);
+        sendSafe('screenshot-captured', { success: true, filePath, filename });
+        resolve({ success: true, filePath, filename });
+      } else {
+        const errMsg = err ? err.message : 'Tập tin ảnh rỗng';
+        sendLog(`[Screenshot] Lỗi chụp màn hình: ${errMsg}`);
+        resolve({ success: false, message: errMsg });
+      }
+    });
+  });
+}
+
+ipcMain.handle('capture-instant-screenshot', async (event, { deviceId } = {}) => {
+  return captureInstantScreenshot(deviceId);
+});
+
+ipcMain.handle('open-screenshots-folder', async () => {
+  const screenshotsDir = path.join(app.getPath('pictures'), 'Pandakeyauto');
+  if (!fs.existsSync(screenshotsDir)) {
+    try { fs.mkdirSync(screenshotsDir, { recursive: true }); } catch (e) {}
+  }
+  shell.openPath(screenshotsDir);
+  return { success: true };
+});
+
 

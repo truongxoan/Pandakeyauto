@@ -2070,6 +2070,123 @@ if (elBtnActivateWirelessAdb) {
   });
 }
 
+// ================= 🎯 QUICK-SWITCH SNIPER (AWM SIÊU TỐC - F7) =================
+let isQuickSniperActive = false;
+const elBtnToggleQuickSniper = document.getElementById('btnToggleQuickSniper');
+const elLblQuickSniperState = document.getElementById('lblQuickSniperState');
+const elBtnTestQuickSniper = document.getElementById('btnTestQuickSniper');
+const elQuickSniperStatus = document.getElementById('quickSniperStatus');
+
+function updateQuickSniperUI() {
+  if (elBtnToggleQuickSniper) {
+    if (isQuickSniperActive) elBtnToggleQuickSniper.classList.add('active');
+    else elBtnToggleQuickSniper.classList.remove('active');
+  }
+  if (elLblQuickSniperState) {
+    elLblQuickSniperState.textContent = isQuickSniperActive ? 'BẬT' : 'TẮT';
+    if (isQuickSniperActive) elLblQuickSniperState.classList.add('active');
+    else elLblQuickSniperState.classList.remove('active');
+  }
+  if (elQuickSniperStatus) {
+    elQuickSniperStatus.textContent = isQuickSniperActive ? 'Đang kích hoạt (F7)' : 'Sẵn sàng';
+    if (isQuickSniperActive) elQuickSniperStatus.classList.add('active');
+    else elQuickSniperStatus.classList.remove('active');
+  }
+}
+
+if (elBtnToggleQuickSniper) {
+  elBtnToggleQuickSniper.addEventListener('click', async () => {
+    isQuickSniperActive = !isQuickSniperActive;
+    updateQuickSniperUI();
+    if (window.api && window.api.toggleQuickSniper) {
+      await window.api.toggleQuickSniper(isQuickSniperActive);
+    }
+    updateFooterLog(`🎯 Quick-Switch Sniper: ${isQuickSniperActive ? 'BẬT (F7) - Tự Đổi Súng Khi Bắn' : 'TẮT'}`);
+    playSoundCue('activate');
+  });
+}
+
+if (elBtnTestQuickSniper) {
+  elBtnTestQuickSniper.addEventListener('click', async () => {
+    if (window.api && window.api.triggerQuickSniper) {
+      await window.api.triggerQuickSniper({ deviceId: currentDeviceId });
+      updateFooterLog('⚡ [Sniper] Đã thử chuỗi đổi súng siêu tốc 0ms: Đổi Dao (3) ➔ Đổi Súng (1)');
+      playSoundCue('activate');
+    }
+  });
+}
+
+if (window.api && window.api.onQuickSniperToggled) {
+  window.api.onQuickSniperToggled((active) => {
+    isQuickSniperActive = !!active;
+    updateQuickSniperUI();
+  });
+}
+
+// ================= 🛡️ TOURNAMENT CLUTCH SHIELD (CHẾ ĐỘ TẬP TRUNG) =================
+let isClutchShieldActive = false;
+const elBtnToggleClutchShield = document.getElementById('btnToggleClutchShield');
+const elLblClutchShieldState = document.getElementById('lblClutchShieldState');
+
+if (elBtnToggleClutchShield) {
+  elBtnToggleClutchShield.addEventListener('click', async () => {
+    isClutchShieldActive = !isClutchShieldActive;
+    if (elBtnToggleClutchShield) {
+      if (isClutchShieldActive) elBtnToggleClutchShield.classList.add('active');
+      else elBtnToggleClutchShield.classList.remove('active');
+    }
+    if (elLblClutchShieldState) {
+      elLblClutchShieldState.textContent = isClutchShieldActive ? 'BẬT' : 'TẮT';
+      if (isClutchShieldActive) elLblClutchShieldState.classList.add('active');
+      else elLblClutchShieldState.classList.remove('active');
+    }
+    if (window.api && window.api.toggleClutchShield) {
+      await window.api.toggleClutchShield({ forceState: isClutchShieldActive, deviceId: currentDeviceId });
+    }
+    updateFooterLog(`🛡️ Chế độ tập trung thi đấu (Clutch Shield): ${isClutchShieldActive ? 'BẬT (Chặn cuộc gọi & thông báo)' : 'TẮT'}`);
+    playSoundCue('activate');
+  });
+}
+
+// ================= 📸 INSTANT HIGHLIGHT SCREENSHOT (F9) =================
+const elBtnCaptureInstantScreenshot = document.getElementById('btnCaptureInstantScreenshot');
+const elBtnOpenScreenshotsFolder = document.getElementById('btnOpenScreenshotsFolder');
+const elLblLatestScreenshot = document.getElementById('lblLatestScreenshot');
+
+if (elBtnCaptureInstantScreenshot) {
+  elBtnCaptureInstantScreenshot.addEventListener('click', async () => {
+    if (!window.api || !window.api.captureInstantScreenshot) return;
+    updateFooterLog('📸 Đang chụp ảnh màn hình điện thoại qua ADB...');
+    const res = await window.api.captureInstantScreenshot({ deviceId: currentDeviceId });
+    if (res && res.success && res.filename) {
+      if (elLblLatestScreenshot) {
+        elLblLatestScreenshot.textContent = res.filename;
+        elLblLatestScreenshot.classList.add('active');
+      }
+      updateFooterLog(`📸 Đã lưu ảnh chụp: ${res.filename}`);
+      playSoundCue('activate');
+    }
+  });
+}
+
+if (elBtnOpenScreenshotsFolder) {
+  elBtnOpenScreenshotsFolder.addEventListener('click', async () => {
+    if (window.api && window.api.openScreenshotsFolder) {
+      await window.api.openScreenshotsFolder();
+      updateFooterLog('📁 Đã mở thư mục ảnh chụp Pictures\\Pandakeyauto');
+    }
+  });
+}
+
+if (window.api && window.api.onScreenshotCaptured) {
+  window.api.onScreenshotCaptured((data) => {
+    if (data && data.filename && elLblLatestScreenshot) {
+      elLblLatestScreenshot.textContent = data.filename;
+      elLblLatestScreenshot.classList.add('active');
+    }
+  });
+}
+
 // ================= KHỞI CHẠY LẦN ĐẦU =================
 window.addEventListener('DOMContentLoaded', () => {
   loadProfiles();

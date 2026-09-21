@@ -73,6 +73,15 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
   - Tối ưu hóa dải tần số 250Hz – 2.5kHz làm nổi bật tiếng bước chân di chuyển, tiếng trèo tường và nạp đạn của kẻ địch xuyên tường/bụi cỏ; nén tiếng sấy đạn to để chống chói tai.
 - **👁️ VIP: Kích Màu Địch & Kính Nhìn Đêm (Digital Vibrance / Black Equalizer)**:
   - Đẩy độ bão hòa màu sắc (Vibrance) và tăng sáng các góc tối, giúp phát hiện kẻ địch núp trong lùm cây hoặc bóng râm nhanh hơn 200%.
+- **🎯 VIP: Quick-Switch Sniper AWM Siêu Tốc (Phím F7)**:
+  - Tự động hủy hoạt ảnh lên đạn chậm chạp của AWM / Kar98 / Sniper bằng chuỗi thao tác: **`Bắn` ➔ `Đổi Dao (3)` ➔ `Đổi Lại Súng Chính (1)`** trong 0.05 giây.
+  - Cho phép bắn liên thanh sniper không cần ngắm lại, tốc độ xả đạn gấp 3 lần bình thường.
+- **🛡️ VIP: Chế Độ Thi Đấu Tập Trung (Tournament Clutch Shield)**:
+  - Tự động bật chế độ **Không làm phiền (Zen DND Mode)** và khóa xoay màn hình trên điện thoại qua ADB.
+  - Chặn triệt để toàn bộ cuộc gọi đến, thông báo Zalo, Messenger, SMS làm giật lag máy hoặc che mất nút bấm lúc đang combat căng thẳng.
+- **📸 VIP: Chụp Ảnh Khoảnh Khắc Highlight (Phím F9)**:
+  - Nhấn phím nóng **F9** toàn cầu để chụp ngay lập tức ảnh màn hình điện thoại chất lượng gốc lossless không viền.
+  - Tự động lưu trữ và quản lý tập tin trong thư mục `Pictures\Pandakeyauto`, 1-click mở thư mục ảnh.
 - **🎯 VIP: Ghìm Tâm Tự Động Siêu Tốc (Recoil Control System - Phím F6)**:
   - Công nghệ Win32 Native Zero-Delay mô phỏng ghìm tâm phần cứng.
   - Tự động kéo tâm súng xuống khi giữ chuột trái sấy đạn liên thanh.
@@ -106,6 +115,8 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
 | <kbd>Tùy Chọn</kbd> (Mặc định: <kbd>Alt</kbd>, <kbd>~</kbd>, <kbd>Caps</kbd>, <kbd>Chuột Giữa</kbd>, <kbd>Chuột Hông</kbd>) | **Đổi chuột 2 chiều siêu tốc (15ms)** giữa PC và Điện thoại (Tùy chọn trong Tab Tinh Chỉnh) |
 | <kbd>F1</kbd> hoặc <kbd>Alt</kbd> + <kbd>3</kbd> | Phím tắt phụ đổi chuột 2 chiều tức thì |
 | <kbd>F6</kbd> | **Bật / Tắt Ghìm Tâm Tự Động (Recoil Control VIP)** |
+| <kbd>F7</kbd> | **Bật / Tắt Tuyệt Kỹ Bắn Tỉa Siêu Tốc (Quick-Switch Sniper AWM)** |
+| <kbd>F9</kbd> | **Chụp Ngay Ảnh Khoảnh Khắc Highlight (Instant Screenshot)** |
 | <kbd>Alt</kbd> + <kbd>Right</kbd> | **Chế Độ Tiếp Theo** (Next Game Mode) kèm HUD nổi |
 | <kbd>Alt</kbd> + <kbd>Left</kbd> | **Chế Độ Trước Đó** (Prev Game Mode) kèm HUD nổi |
 | <kbd>Alt</kbd> + <kbd>X</kbd> | **Boss Key**: Tắt màn hình ĐT (game vẫn chạy) & Ẩn cửa sổ PC |
