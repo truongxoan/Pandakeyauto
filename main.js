@@ -132,9 +132,15 @@ function getScrcpyWindowBounds() {
   });
 }
 
+let boundsSyncTimer = null;
+
 async function toggleKeymapOverlay(enable) {
   if (enable === undefined) {
-    enable = !keymapOverlayWindow;
+    if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
+      keymapOverlayWindow.webContents.send('toggle-edit-mode');
+      return true;
+    }
+    enable = true;
   }
   if (enable) {
     const bounds = await getScrcpyWindowBounds();
@@ -167,23 +173,48 @@ async function toggleKeymapOverlay(enable) {
 
       keymapOverlayWindow.on('closed', () => {
         keymapOverlayWindow = null;
+        if (boundsSyncTimer) {
+          clearInterval(boundsSyncTimer);
+          boundsSyncTimer = null;
+        }
       });
+
+      // Tự động đồng bộ vị trí Overlay theo khung cửa sổ Scrcpy khi di chuyển/thay đổi kích thước
+      if (boundsSyncTimer) clearInterval(boundsSyncTimer);
+      boundsSyncTimer = setInterval(async () => {
+        if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
+          const currentBounds = await getScrcpyWindowBounds();
+          const old = keymapOverlayWindow.getBounds();
+          if (
+            Math.abs(currentBounds.x - old.x) > 3 ||
+            Math.abs(currentBounds.y - old.y) > 3 ||
+            Math.abs(currentBounds.width - old.width) > 3 ||
+            Math.abs(currentBounds.height - old.height) > 3
+          ) {
+            keymapOverlayWindow.setBounds(currentBounds);
+          }
+        } else {
+          clearInterval(boundsSyncTimer);
+          boundsSyncTimer = null;
+        }
+      }, 1200);
     } else {
       keymapOverlayWindow.setBounds(bounds);
+      keymapOverlayWindow.webContents.send('set-edit-mode', true);
     }
 
     keymapOverlayWindow.show();
     keymapOverlayWindow.focus();
 
     showOsdNotification({
-      icon: '🎮',
-      game: 'CHẾ ĐỘ GÁN PHÍM TRONG GAME',
+      icon: '🐼',
+      game: 'PANDA KEYMAP OVERLAY',
       badge: 'F12 ĐANG BẬT',
-      mode: 'Kéo thả các nút phím ảo đè lên game',
-      specs: 'Bấm F12 hoặc Lưu Layout để chơi tiếp'
+      mode: 'Biểu tượng Panda nổi trên màn hình',
+      specs: 'Nhấp biểu tượng 🐼 hoặc bấm F12 để sửa/chơi'
     });
   } else {
-    if (keymapOverlayWindow) {
+    if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
       keymapOverlayWindow.close();
       keymapOverlayWindow = null;
     }
@@ -1694,6 +1725,18 @@ async function startControlInternal(options = {}) {
       }
     });
 
+    // Tự động kích hoạt biểu tượng Panda nổi trên màn hình Scrcpy khi chơi game
+    if (!options.noVideoPlayback) {
+      setTimeout(async () => {
+        if (controlProcess && !keymapOverlayWindow) {
+          const scrcpyRect = await getScrcpyWindowBounds();
+          if (scrcpyRect && scrcpyRect.width > 200) {
+            toggleKeymapOverlay(true);
+          }
+        }
+      }, 1800);
+    }
+
     let lastErrorLines = [];
 
     controlProcess.stdout.on('data', (data) => {
@@ -1709,6 +1752,12 @@ async function startControlInternal(options = {}) {
     controlProcess.on('close', (code) => {
       const wasSessionActive = isSessionActive;
       controlProcess = null;
+
+      // Đóng cửa sổ Overlay gán phím khi phiên Scrcpy kết thúc
+      if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
+        try { keymapOverlayWindow.close(); } catch (e) {}
+        keymapOverlayWindow = null;
+      }
 
       // Khôi phục ngay lập tức tốc độ chuột PC gốc
       try {

@@ -2,8 +2,19 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Keymap HUD Overlay - Pandakeyauto Pro</title>
+  <title>Panda Keymap Pro - In-Game HUD Overlay</title>
   <style>
+    :root {
+      --cyan: #00f2fe;
+      --blue: #4facfe;
+      --green: #00ff88;
+      --red: #ff3366;
+      --gold: #ffd700;
+      --purple: #7928ca;
+      --bg-dark: rgba(8, 14, 28, 0.92);
+      --border-glow: rgba(0, 242, 254, 0.45);
+    }
+
     * {
       box-sizing: border-box;
       user-select: none;
@@ -11,91 +22,276 @@
       margin: 0;
       padding: 0;
     }
+
     body {
       width: 100vw;
       height: 100vh;
       overflow: hidden;
       background: transparent;
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
       position: relative;
     }
 
-    /* Top Control Bar */
+    /* ================= 🐼 QUẢ CẦU BIỂU TƯỢNG PANDA NỔI TRÊN MÀN HÌNH ================= */
+    .panda-floating-bubble {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #1c2c4c, #070d18);
+      border: 2px solid var(--cyan);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 242, 254, 0.6), inset 0 0 10px rgba(0, 242, 254, 0.3);
+      cursor: grab;
+      z-index: 999999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(8px);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .panda-floating-bubble:hover {
+      transform: scale(1.12);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 242, 254, 0.9), inset 0 0 12px rgba(0, 242, 254, 0.5);
+      opacity: 1 !important;
+    }
+
+    .panda-floating-bubble:active {
+      cursor: grabbing;
+      transform: scale(0.96);
+    }
+
+    .panda-icon-inner {
+      font-size: 26px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+      pointer-events: none;
+    }
+
+    .panda-badge-text {
+      font-size: 7px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      margin-top: 1px;
+      text-shadow: 0 0 4px var(--cyan);
+      pointer-events: none;
+    }
+
+    .panda-status-dot {
+      position: absolute;
+      top: 1px;
+      right: 1px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid #050b16;
+      box-shadow: 0 0 6px var(--green);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    .panda-status-dot.editing {
+      background: var(--gold);
+      box-shadow: 0 0 8px var(--gold);
+      animation: pulse-dot 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    /* Pulser ring */
+    .panda-pulse-ring {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      animation: pulse-ring 2.4s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      pointer-events: none;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.18); opacity: 0; }
+      100% { transform: scale(0.95); opacity: 0; }
+    }
+
+    /* ================= 🎛️ THANH CÔNG CỤ CÀI ĐẶT GÁN PHÍM (EXPANDED TOOLBAR) ================= */
     .overlay-toolbar {
       position: absolute;
-      top: 10px;
+      top: 16px;
       left: 50%;
-      transform: translateX(-50%);
+      transform: translateX(-50%) translateY(0);
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(10, 15, 29, 0.88);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(0, 242, 254, 0.4);
+      gap: 8px;
+      background: var(--bg-dark);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow);
       padding: 6px 16px;
-      border-radius: 30px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.2);
-      z-index: 10000;
-      transition: all 0.3s ease;
+      border-radius: 36px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 242, 254, 0.25);
+      z-index: 100000;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .overlay-toolbar.hidden {
-      opacity: 0.15;
-      transform: translateX(-50%) translateY(-70%);
+
+    .overlay-toolbar.collapsed {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-30px);
     }
-    .overlay-toolbar:hover {
-      opacity: 1 !important;
-      transform: translateX(-50%) translateY(0) !important;
-    }
-    .toolbar-title {
-      font-size: 0.82rem;
-      font-weight: 800;
-      color: #00f2fe;
-      letter-spacing: 0.5px;
+
+    .toolbar-brand {
       display: flex;
       align-items: center;
       gap: 6px;
+      padding-right: 6px;
     }
+
+    .brand-icon {
+      font-size: 1.15rem;
+    }
+
+    .brand-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 0.76rem;
+      font-weight: 900;
+      color: var(--cyan);
+      letter-spacing: 0.5px;
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #8899b0;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .toolbar-divider {
+      width: 1px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.15);
+      margin: 0 2px;
+    }
+
     .btn-tool {
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      color: #e0e6ed;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e2e8f0;
       font-size: 0.75rem;
       font-weight: 600;
-      padding: 4px 12px;
+      padding: 5px 12px;
       border-radius: 20px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 4px;
-      transition: all 0.2s;
-    }
-    .btn-tool:hover {
-      background: rgba(0, 242, 254, 0.2);
-      border-color: #00f2fe;
-      color: #fff;
-    }
-    .btn-tool.active {
-      background: linear-gradient(135deg, #00f2fe, #4facfe);
-      color: #050b14;
-      border-color: #00f2fe;
-      font-weight: 800;
-    }
-    .btn-tool-danger:hover {
-      background: rgba(255, 75, 75, 0.25);
-      border-color: #ff4b4b;
-      color: #ff4b4b;
+      gap: 5px;
+      transition: all 0.18s ease;
+      white-space: nowrap;
     }
 
-    /* Keymap Canvas Container */
+    .btn-tool:hover {
+      background: rgba(0, 242, 254, 0.2);
+      border-color: var(--cyan);
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-tool:active {
+      transform: translateY(1px);
+    }
+
+    .btn-tool-save {
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      border-color: var(--cyan);
+      color: #030812;
+      font-weight: 800;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+    }
+
+    .btn-tool-save:hover {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.7);
+      color: #000;
+    }
+
+    .btn-tool-reset:hover {
+      background: rgba(255, 170, 0, 0.2);
+      border-color: #ffaa00;
+      color: #ffaa00;
+    }
+
+    .btn-tool-danger:hover {
+      background: rgba(255, 51, 102, 0.25);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Slider Group */
+    .tool-slider-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 4px;
+    }
+
+    .slider-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+
+    .tool-slider {
+      width: 60px;
+      height: 5px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .tool-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--cyan);
+      min-width: 28px;
+    }
+
+    /* ================= 🎯 CANVAS VÀ NÚT BẤM KEYMAP ================= */
     #keymapCanvas {
       width: 100vw;
       height: 100vh;
       position: absolute;
       top: 0;
       left: 0;
+      overflow: hidden;
     }
 
-    /* Keybind Elements */
     .key-node {
       position: absolute;
       transform: translate(-50%, -50%);
@@ -104,33 +300,45 @@
       align-items: center;
       justify-content: center;
       cursor: grab;
-      transition: box-shadow 0.2s;
       z-index: 100;
+      transition: transform 0.15s, opacity 0.25s;
     }
+
+    .key-node:hover {
+      z-index: 1000;
+    }
+
     .key-node:active {
       cursor: grabbing;
+      transform: translate(-50%, -50%) scale(1.06);
     }
+
     .key-badge {
-      width: 36px;
+      min-width: 36px;
       height: 36px;
-      border-radius: 50%;
-      background: rgba(10, 18, 36, 0.75);
-      border: 2px solid #00f2fe;
-      box-shadow: 0 0 12px rgba(0, 242, 254, 0.4), inset 0 0 6px rgba(0, 242, 254, 0.2);
+      padding: 0 6px;
+      border-radius: 18px;
+      background: rgba(10, 18, 36, 0.85);
+      border: 2px solid var(--cyan);
+      box-shadow: 0 0 14px rgba(0, 242, 254, 0.45), inset 0 0 6px rgba(0, 242, 254, 0.2);
       color: #ffffff;
       font-weight: 800;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       display: flex;
       align-items: center;
       justify-content: center;
       text-transform: uppercase;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(5px);
+      position: relative;
+      transition: all 0.2s;
     }
+
     .key-label {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: #4facfe;
-      background: rgba(0, 0, 0, 0.7);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #60a5fa;
+      background: rgba(4, 9, 20, 0.82);
+      border: 1px solid rgba(96, 165, 250, 0.3);
       padding: 1px 6px;
       border-radius: 8px;
       margin-top: 3px;
@@ -139,47 +347,91 @@
       pointer-events: none;
     }
 
-    /* Fire and Scope Special Nodes */
+    /* Nút Xóa nút phím (hiện khi hover vào nút ở chế độ Edit) */
+    .btn-del-node {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--red);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 900;
+      border: 1px solid #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(255, 51, 102, 0.8);
+      z-index: 10;
+    }
+
+    .key-node:hover .btn-del-node {
+      display: flex;
+    }
+
+    /* Đang ở chế độ chờ bấm phím (Rebinding) */
+    .key-node.rebinding .key-badge {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.9), inset 0 0 10px rgba(255, 215, 0, 0.4);
+      background: rgba(40, 32, 10, 0.92);
+      color: var(--gold);
+      animation: pulse-rebind 0.8s infinite alternate;
+    }
+
+    @keyframes pulse-rebind {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.12); }
+    }
+
+    /* Special Nodes: Fire & Scope */
     .key-node.fire .key-badge {
-      width: 44px;
+      min-width: 44px;
       height: 44px;
-      border-color: #ff3366;
-      box-shadow: 0 0 16px rgba(255, 51, 102, 0.6), inset 0 0 8px rgba(255, 51, 102, 0.3);
-      color: #ff3366;
-      background: rgba(40, 10, 20, 0.75);
-      font-size: 1.1rem;
+      border-radius: 50%;
+      border-color: var(--red);
+      box-shadow: 0 0 18px rgba(255, 51, 102, 0.65), inset 0 0 8px rgba(255, 51, 102, 0.35);
+      color: var(--red);
+      background: rgba(40, 10, 20, 0.85);
+      font-size: 1.15rem;
     }
     .key-node.fire .key-label {
       color: #ff6688;
+      border-color: rgba(255, 51, 102, 0.4);
     }
 
     .key-node.scope .key-badge {
-      width: 42px;
+      min-width: 42px;
       height: 42px;
-      border-color: #00ff88;
-      box-shadow: 0 0 16px rgba(0, 255, 136, 0.6), inset 0 0 8px rgba(0, 255, 136, 0.3);
-      color: #00ff88;
-      background: rgba(10, 36, 20, 0.75);
-      font-size: 1rem;
+      border-radius: 50%;
+      border-color: var(--green);
+      box-shadow: 0 0 18px rgba(0, 255, 136, 0.65), inset 0 0 8px rgba(0, 255, 136, 0.35);
+      color: var(--green);
+      background: rgba(10, 38, 22, 0.85);
+      font-size: 1.05rem;
     }
     .key-node.scope .key-label {
       color: #66ffaa;
+      border-color: rgba(0, 255, 136, 0.4);
     }
 
-    /* Joystick Special Node */
+    /* Joystick Special Node (WASD) */
     .joystick-node {
       position: absolute;
       transform: translate(-50%, -50%);
       width: 140px;
       height: 140px;
       border-radius: 50%;
-      border: 2px dashed rgba(0, 242, 254, 0.6);
-      background: rgba(0, 242, 254, 0.04);
+      border: 2px dashed rgba(0, 242, 254, 0.7);
+      background: radial-gradient(circle, rgba(0, 242, 254, 0.08) 0%, rgba(0, 242, 254, 0.01) 70%, transparent 100%);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: grab;
       z-index: 90;
+      transition: opacity 0.25s;
     }
     .joystick-node:active {
       cursor: grabbing;
@@ -188,61 +440,151 @@
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: rgba(10, 20, 40, 0.85);
-      border: 2px solid #00f2fe;
-      color: #00f2fe;
-      font-weight: 800;
+      background: rgba(10, 20, 42, 0.9);
+      border: 2px solid var(--cyan);
+      color: var(--cyan);
+      font-weight: 900;
       font-size: 0.75rem;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 14px rgba(0, 242, 254, 0.5);
+      box-shadow: 0 0 16px rgba(0, 242, 254, 0.5);
     }
     .joystick-arrow {
       position: absolute;
-      font-size: 0.7rem;
-      color: rgba(0, 242, 254, 0.8);
-      font-weight: bold;
+      font-size: 0.72rem;
+      color: rgba(0, 242, 254, 0.9);
+      font-weight: 800;
     }
     .arrow-w { top: 6px; }
     .arrow-s { bottom: 6px; }
     .arrow-a { left: 8px; }
     .arrow-d { right: 8px; }
 
-    /* Play mode style */
+    /* ================= 🎮 PLAY MODE (CHẾ ĐỘ CHƠI XUYÊN THẤU) ================= */
     body.play-mode .overlay-toolbar {
-      opacity: 0.15;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-30px);
     }
+
     body.play-mode .key-node {
       cursor: default;
       pointer-events: none;
     }
+
     body.play-mode .joystick-node {
       cursor: default;
       pointer-events: none;
     }
-    body.play-mode .key-badge {
+
+    body.play-mode .btn-del-node {
+      display: none !important;
+    }
+
+    body.play-mode .panda-floating-bubble {
       opacity: 0.65;
     }
-    body.play-mode .key-label {
-      opacity: 0.5;
+
+    /* Toast Notification */
+    .toast-msg {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: rgba(10, 18, 36, 0.92);
+      border: 1px solid var(--cyan);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(0, 242, 254, 0.4);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 18px;
+      border-radius: 20px;
+      z-index: 9999999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toast-msg.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
   </style>
 </head>
 <body class="edit-mode">
-  <!-- Toolbar -->
-  <div class="overlay-toolbar" id="overlayToolbar">
-    <div class="toolbar-title">
-      <span>🎮</span>
-      <span>GÁN PHÍM TRONG GAME (F12)</span>
-    </div>
-    <button class="btn-tool" id="btnAddKey" title="Thêm nút phím mới">➕ Thêm Phím</button>
-    <button class="btn-tool active" id="btnSaveKeymap" title="Lưu lại layout và quay lại chơi game (F12)">💾 Lưu & Chơi Tiếp (F12)</button>
-    <button class="btn-tool" id="btnResetKeymap" title="Khôi phục layout mặc định của game">↺ Mặc Định</button>
-    <button class="btn-tool btn-tool-danger" id="btnCloseOverlay" title="Đóng cửa sổ gán phím">✖ Đóng</button>
+  <!-- 🐼 Quả Cầu Panda Nổi Trên Màn Hình -->
+  <div class="panda-floating-bubble" id="pandaBubble" title="Nhấp để gán phím hoặc thu gọn (F12)">
+    <div class="panda-icon-inner">🐼</div>
+    <div class="panda-pulse-ring"></div>
+    <div class="panda-badge-text">PANDA</div>
+    <div class="panda-status-dot editing" id="pandaStatusDot"></div>
   </div>
 
-  <!-- Keymap Nodes Container -->
+  <!-- 🎛️ Thanh Công Cụ Gán Phím Thông Minh -->
+  <div class="overlay-toolbar" id="overlayToolbar">
+    <div class="toolbar-brand">
+      <span class="brand-icon">🐼</span>
+      <div class="brand-info">
+        <span class="brand-title">PANDA KEYMAP PRO</span>
+        <span class="brand-sub" id="txtProfileName">FREE FIRE</span>
+      </div>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <button class="btn-tool" id="btnAddKey" title="Thêm nút phím mới">
+      <span>➕</span>
+      <span>Thêm Phím</span>
+    </button>
+
+    <button class="btn-tool" id="btnAddJoystick" title="Thêm hoặc đặt lại Cụm Di Chuyển WASD">
+      <span>🕹️</span>
+      <span>WASD</span>
+    </button>
+
+    <button class="btn-tool" id="btnAddFire" title="Thêm nút Bắn (Chuột Trái)">
+      <span>🔥</span>
+      <span>Nút Bắn</span>
+    </button>
+
+    <button class="btn-tool" id="btnAddScope" title="Thêm nút Ngắm (Chuột Phải)">
+      <span>🎯</span>
+      <span>Nút Ngắm</span>
+    </button>
+
+    <div class="toolbar-divider"></div>
+
+    <!-- Thanh trượt chỉnh độ mờ phím khi chơi -->
+    <div class="tool-slider-group" title="Chỉnh độ mờ hiển thị các nút phím khi chơi">
+      <span class="slider-label">👁️ Độ Mờ:</span>
+      <input type="range" id="rangeOpacity" min="0" max="100" value="70" class="tool-slider">
+      <span id="txtOpacityVal" class="slider-val">70%</span>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <button class="btn-tool btn-tool-save" id="btnSaveKeymap" title="Lưu layout và bắt đầu chơi game ngay (F12)">
+      <span>💾</span>
+      <span>Lưu & Chơi (F12)</span>
+    </button>
+
+    <button class="btn-tool btn-tool-reset" id="btnResetKeymap" title="Khôi phục layout mặc định của game">
+      <span>↺</span>
+      <span>Mặc Định</span>
+    </button>
+
+    <button class="btn-tool btn-tool-danger" id="btnCloseOverlay" title="Đóng hẳn cửa sổ gán phím">
+      <span>✖</span>
+      <span>Đóng</span>
+    </button>
+  </div>
+
+  <!-- Toast Thông Báo -->
+  <div class="toast-msg" id="toastMsg">💾 Đã lưu cấu hình ánh xạ phím!</div>
+
+  <!-- Keymap Canvas Container -->
   <div id="keymapCanvas"></div>
 
   <script>
@@ -253,20 +595,182 @@
     let activeDragNode = null;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    let rebindingTarget = null;
+    let hudOpacity = 0.70;
 
+    // Elements
+    const elBubble = document.getElementById('pandaBubble');
+    const elStatusDot = document.getElementById('pandaStatusDot');
     const elToolbar = document.getElementById('overlayToolbar');
-    const elBtnToggleEditMode = document.getElementById('btnToggleEditMode');
-    const elTxtEditMode = document.getElementById('txtEditMode');
+    const elProfileName = document.getElementById('txtProfileName');
+    const elCanvas = document.getElementById('keymapCanvas');
     const elBtnAddKey = document.getElementById('btnAddKey');
+    const elBtnAddJoystick = document.getElementById('btnAddJoystick');
+    const elBtnAddFire = document.getElementById('btnAddFire');
+    const elBtnAddScope = document.getElementById('btnAddScope');
     const elBtnSaveKeymap = document.getElementById('btnSaveKeymap');
     const elBtnResetKeymap = document.getElementById('btnResetKeymap');
     const elBtnCloseOverlay = document.getElementById('btnCloseOverlay');
-    const elCanvas = document.getElementById('keymapCanvas');
+    const elRangeOpacity = document.getElementById('rangeOpacity');
+    const elTxtOpacityVal = document.getElementById('txtOpacityVal');
+    const elToast = document.getElementById('toastMsg');
 
-    // Request active game keymap
+    function showToast(text, duration = 2000) {
+      elToast.textContent = text;
+      elToast.classList.add('show');
+      setTimeout(() => {
+        elToast.classList.remove('show');
+      }, duration);
+    }
+
+    // ================= 🐼 DRAGGABLE PANDA BUBBLE =================
+    let bubbleDrag = {
+      isDragging: false,
+      startX: 0,
+      startY: 0,
+      initialLeft: 24,
+      initialTop: 24,
+      hasMoved: false
+    };
+
+    // Khôi phục vị trí quả cầu từ bộ nhớ
+    try {
+      const savedPos = JSON.parse(localStorage.getItem('panda_bubble_pos') || '{}');
+      if (savedPos.left && savedPos.top) {
+        elBubble.style.left = savedPos.left + 'px';
+        elBubble.style.top = savedPos.top + 'px';
+      }
+      const savedOpacity = localStorage.getItem('panda_hud_opacity');
+      if (savedOpacity !== null) {
+        hudOpacity = parseFloat(savedOpacity);
+        elRangeOpacity.value = Math.round(hudOpacity * 100);
+        elTxtOpacityVal.textContent = Math.round(hudOpacity * 100) + '%';
+      }
+    } catch (e) {}
+
+    elBubble.addEventListener('mousedown', (e) => {
+      bubbleDrag.isDragging = true;
+      bubbleDrag.hasMoved = false;
+      bubbleDrag.startX = e.clientX;
+      bubbleDrag.startY = e.clientY;
+      const rect = elBubble.getBoundingClientRect();
+      bubbleDrag.initialLeft = rect.left;
+      bubbleDrag.initialTop = rect.top;
+      e.stopPropagation();
+    });
+
+    // Bắt chuột khi hover vào quả cầu ở Play mode để bấm được
+    let isMouseOverInteractive = false;
+    window.addEventListener('mousemove', (e) => {
+      // 1. Kéo quả cầu Panda
+      if (bubbleDrag.isDragging) {
+        const dx = e.clientX - bubbleDrag.startX;
+        const dy = e.clientY - bubbleDrag.startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          bubbleDrag.hasMoved = true;
+        }
+        const newLeft = Math.max(8, Math.min(window.innerWidth - 60, bubbleDrag.initialLeft + dx));
+        const newTop = Math.max(8, Math.min(window.innerHeight - 60, bubbleDrag.initialTop + dy));
+        elBubble.style.left = newLeft + 'px';
+        elBubble.style.top = newTop + 'px';
+        return;
+      }
+
+      // 2. Kéo nút phím (chỉ khi đang ở Edit Mode)
+      if (isEditMode && activeDragNode) {
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        const normX = Math.max(0.01, Math.min(0.99, x / window.innerWidth));
+        const normY = Math.max(0.01, Math.min(0.99, y / window.innerHeight));
+
+        activeDragNode.style.left = (normX * 100) + '%';
+        activeDragNode.style.top = (normY * 100) + '%';
+
+        if (activeDragNode._onMove) {
+          activeDragNode._onMove(normX, normY);
+        }
+        return;
+      }
+
+      // 3. Xuyên thấu thông minh (Smart Click-Through) khi ở Play Mode
+      if (!isEditMode) {
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const isHoveringWidget = target && (target.closest('#pandaBubble') || target.closest('.overlay-toolbar'));
+        if (isHoveringWidget && !isMouseOverInteractive) {
+          isMouseOverInteractive = true;
+          ipcRenderer.invoke('set-keymap-overlay-interactive', true);
+        } else if (!isHoveringWidget && isMouseOverInteractive) {
+          isMouseOverInteractive = false;
+          ipcRenderer.invoke('set-keymap-overlay-interactive', false);
+        }
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (bubbleDrag.isDragging) {
+        bubbleDrag.isDragging = false;
+        if (bubbleDrag.hasMoved) {
+          const rect = elBubble.getBoundingClientRect();
+          localStorage.setItem('panda_bubble_pos', JSON.stringify({ left: rect.left, top: rect.top }));
+        } else {
+          // Nhấp vào quả cầu Panda -> Bật/Tắt chế độ gán phím
+          setEditMode(!isEditMode);
+        }
+      }
+
+      if (activeDragNode) {
+        activeDragNode.style.zIndex = '';
+        activeDragNode = null;
+      }
+    });
+
+    // ================= 🎮 CHUYỂN ĐỔI CHẾ ĐỘ CHƠI / SỬA PHÍM =================
+    function setEditMode(enable) {
+      isEditMode = enable;
+      if (isEditMode) {
+        document.body.classList.remove('play-mode');
+        document.body.classList.add('edit-mode');
+        elToolbar.classList.remove('collapsed');
+        elStatusDot.classList.add('editing');
+        applyHudOpacity(1.0);
+        ipcRenderer.invoke('set-keymap-overlay-interactive', true);
+        showToast('✏️ Chế độ Gán Phím — Kéo thả nút hoặc bấm vào nút để đổi phím');
+      } else {
+        document.body.classList.remove('edit-mode');
+        document.body.classList.add('play-mode');
+        elToolbar.classList.add('collapsed');
+        elStatusDot.classList.remove('editing');
+        applyHudOpacity(hudOpacity);
+        cancelRebinding();
+        ipcRenderer.invoke('set-keymap-overlay-interactive', false);
+        showToast('🎮 Đang Chơi — Khóa chuột & Xuyên thấu (Nhấp Panda để sửa)');
+      }
+    }
+
+    function applyHudOpacity(val) {
+      const nodes = document.querySelectorAll('.key-node, .joystick-node');
+      nodes.forEach(n => {
+        n.style.opacity = val;
+      });
+    }
+
+    // Độ mờ HUD
+    elRangeOpacity.addEventListener('input', (e) => {
+      hudOpacity = parseInt(e.target.value, 10) / 100;
+      elTxtOpacityVal.textContent = e.target.value + '%';
+      localStorage.setItem('panda_hud_opacity', hudOpacity.toString());
+      if (!isEditMode) {
+        applyHudOpacity(hudOpacity);
+      }
+    });
+
+    // ================= 🎯 RENDER KEYMAP NODES =================
     async function loadLayout() {
       try {
         currentKeymap = await ipcRenderer.invoke('get-current-keymap');
+        if (currentKeymap && currentKeymap.name) {
+          elProfileName.textContent = currentKeymap.name.toUpperCase();
+        }
         renderKeymap();
       } catch (e) {
         console.error('Lỗi khi tải layout:', e);
@@ -277,70 +781,123 @@
       elCanvas.innerHTML = '';
       if (!currentKeymap) return;
 
-      // 1. Render Joystick
+      // 1. Render Joystick (WASD)
       if (currentKeymap.joystick) {
-        const j = currentKeymap.joystick;
-        const jNode = document.createElement('div');
-        jNode.className = 'joystick-node';
-        jNode.style.left = (j.centerX * 100) + '%';
-        jNode.style.top = (j.centerY * 100) + '%';
-        jNode.dataset.type = 'joystick';
-
-        jNode.innerHTML = `
-          <div class="joystick-arrow arrow-w">W</div>
-          <div class="joystick-arrow arrow-s">S</div>
-          <div class="joystick-arrow arrow-a">A</div>
-          <div class="joystick-arrow arrow-d">D</div>
-          <div class="joystick-center">WASD</div>
-        `;
-        setupDraggable(jNode, (normX, normY) => {
-          j.centerX = normX;
-          j.centerY = normY;
-        });
-        elCanvas.appendChild(jNode);
+        renderJoystickNode(currentKeymap.joystick);
       }
 
-      // 2. Render Fire
+      // 2. Render Nút Bắn (Fire)
       if (currentKeymap.fire) {
-        const f = currentKeymap.fire;
-        const fNode = createKeyNode('🔥', f.label || 'Bắn', f.x, f.y, 'fire', (normX, normY) => {
-          f.x = normX;
-          f.y = normY;
-        });
-        elCanvas.appendChild(fNode);
+        renderFireNode(currentKeymap.fire);
       }
 
-      // 3. Render Scope
+      // 3. Render Nút Ngắm (Scope)
       if (currentKeymap.scope) {
-        const s = currentKeymap.scope;
-        const sNode = createKeyNode('🎯', s.label || 'Ngắm', s.x, s.y, 'scope', (normX, normY) => {
-          s.x = normX;
-          s.y = normY;
-        });
-        elCanvas.appendChild(sNode);
+        renderScopeNode(currentKeymap.scope);
       }
 
-      // 4. Render Normal Keys
+      // 4. Render Các Nút Phím Thường
       if (currentKeymap.keys && Array.isArray(currentKeymap.keys)) {
         currentKeymap.keys.forEach((k, idx) => {
-          const kNode = createKeyNode(k.key, k.label || k.key, k.x, k.y, '', (normX, normY) => {
-            k.x = normX;
-            k.y = normY;
-          });
-          elCanvas.appendChild(kNode);
+          renderNormalKeyNode(k, idx);
         });
       }
+
+      applyHudOpacity(isEditMode ? 1.0 : hudOpacity);
     }
 
-    function createKeyNode(text, label, normX, normY, extraClass, onMove) {
+    function renderJoystickNode(j) {
+      const jNode = document.createElement('div');
+      jNode.className = 'joystick-node';
+      jNode.style.left = (j.centerX * 100) + '%';
+      jNode.style.top = (j.centerY * 100) + '%';
+
+      jNode.innerHTML = `
+        <div class="joystick-arrow arrow-w">W</div>
+        <div class="joystick-arrow arrow-s">S</div>
+        <div class="joystick-arrow arrow-a">A</div>
+        <div class="joystick-arrow arrow-d">D</div>
+        <div class="joystick-center">WASD</div>
+        <div class="btn-del-node" title="Xóa cụm di chuyển">✖</div>
+      `;
+
+      jNode.querySelector('.btn-del-node').addEventListener('click', (e) => {
+        e.stopPropagation();
+        delete currentKeymap.joystick;
+        renderKeymap();
+      });
+
+      setupDraggable(jNode, (normX, normY) => {
+        j.centerX = normX;
+        j.centerY = normY;
+      });
+
+      elCanvas.appendChild(jNode);
+    }
+
+    function renderFireNode(f) {
+      const fNode = createKeyNode('🔥', f.label || 'Bắn', f.x, f.y, 'fire', (normX, normY) => {
+        f.x = normX;
+        f.y = normY;
+      });
+
+      fNode.querySelector('.btn-del-node').addEventListener('click', (e) => {
+        e.stopPropagation();
+        delete currentKeymap.fire;
+        renderKeymap();
+      });
+
+      elCanvas.appendChild(fNode);
+    }
+
+    function renderScopeNode(s) {
+      const sNode = createKeyNode('🎯', s.label || 'Ngắm', s.x, s.y, 'scope', (normX, normY) => {
+        s.x = normX;
+        s.y = normY;
+      });
+
+      sNode.querySelector('.btn-del-node').addEventListener('click', (e) => {
+        e.stopPropagation();
+        delete currentKeymap.scope;
+        renderKeymap();
+      });
+
+      elCanvas.appendChild(sNode);
+    }
+
+    function renderNormalKeyNode(k, idx) {
+      const kNode = createKeyNode(k.key, k.label || k.key, k.x, k.y, '', (normX, normY) => {
+        k.x = normX;
+        k.y = normY;
+      });
+
+      // Bấm vào nút để gán phím mới lập tức
+      kNode.addEventListener('click', (e) => {
+        if (!isEditMode) return;
+        startRebinding(kNode, k);
+        e.stopPropagation();
+      });
+
+      // Nút xóa nút phím
+      kNode.querySelector('.btn-del-node').addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentKeymap.keys.splice(idx, 1);
+        renderKeymap();
+      });
+
+      elCanvas.appendChild(kNode);
+    }
+
+    function createKeyNode(badgeText, labelText, normX, normY, extraClass, onMove) {
       const node = document.createElement('div');
       node.className = `key-node ${extraClass}`;
       node.style.left = (normX * 100) + '%';
       node.style.top = (normY * 100) + '%';
 
       node.innerHTML = `
-        <div class="key-badge">${text}</div>
-        <div class="key-label">${label}</div>
+        <div class="key-badge">${badgeText}</div>
+        <div class="key-label">${labelText}</div>
+        <div class="btn-del-node" title="Xóa nút này">✖</div>
       `;
 
       setupDraggable(node, onMove);
@@ -348,114 +905,153 @@
     }
 
     function setupDraggable(element, onMove) {
+      element._onMove = onMove;
       element.addEventListener('mousedown', (e) => {
         if (!isEditMode) return;
+        if (e.target.classList.contains('btn-del-node')) return;
         activeDragNode = element;
         const rect = element.getBoundingClientRect();
         dragOffsetX = e.clientX - (rect.left + rect.width / 2);
         dragOffsetY = e.clientY - (rect.top + rect.height / 2);
-        element.style.zIndex = 1000;
+        element.style.zIndex = 10000;
         e.stopPropagation();
       });
+    }
 
-      element.addEventListener('dblclick', () => {
-        if (!isEditMode) return;
-        const newKey = prompt('Nhập phím mới cho nút này (VD: E, Q, Space, Shift, 4):');
-        if (newKey) {
-          const badge = element.querySelector('.key-badge');
-          if (badge) badge.textContent = newKey.toUpperCase();
+    // ================= ⌨️ GÁN PHÍM TRỰC TIẾP (QUICK REBINDING) =================
+    function startRebinding(nodeElement, keyData) {
+      cancelRebinding();
+      rebindingTarget = { nodeElement, keyData };
+      nodeElement.classList.add('rebinding');
+      const badge = nodeElement.querySelector('.key-badge');
+      const label = nodeElement.querySelector('.key-label');
+      badge.textContent = '⌨️...';
+      label.textContent = 'Bấm phím bất kỳ...';
+      showToast(`⌨️ Hãy bấm 1 phím trên bàn phím để gán cho [${keyData.label || 'Nút'}]`);
+    }
+
+    function cancelRebinding() {
+      if (rebindingTarget) {
+        rebindingTarget.nodeElement.classList.remove('rebinding');
+        const badge = rebindingTarget.nodeElement.querySelector('.key-badge');
+        const label = rebindingTarget.nodeElement.querySelector('.key-label');
+        if (badge) badge.textContent = rebindingTarget.keyData.key;
+        if (label) label.textContent = rebindingTarget.keyData.label || rebindingTarget.keyData.key;
+        rebindingTarget = null;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      // Phím tắt F12 toàn cục hoặc Escape
+      if (e.key === 'F12') {
+        e.preventDefault();
+        saveAndPlay();
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        if (rebindingTarget) {
+          cancelRebinding();
+        } else if (isEditMode) {
+          setEditMode(false);
         }
-      });
-    }
+        return;
+      }
 
-    window.addEventListener('mousemove', (e) => {
-      if (!isEditMode || !activeDragNode) return;
-      const x = e.clientX - dragOffsetX;
-      const y = e.clientY - dragOffsetY;
+      // Đang gán phím mới
+      if (rebindingTarget) {
+        e.preventDefault();
+        e.stopPropagation();
 
-      const normX = Math.max(0.02, Math.min(0.98, x / window.innerWidth));
-      const normY = Math.max(0.02, Math.min(0.98, y / window.innerHeight));
+        let keyName = e.key;
+        if (e.code === 'Space') keyName = 'Space';
+        else if (e.code.startsWith('Key')) keyName = e.code.replace('Key', '');
+        else if (e.code.startsWith('Digit')) keyName = e.code.replace('Digit', '');
+        else if (e.code.startsWith('Numpad')) keyName = 'Num' + e.code.replace('Numpad', '');
+        else if (e.key === 'Control') keyName = 'Ctrl';
+        else if (e.key === 'Shift') keyName = 'Shift';
+        else if (e.key === 'Alt') keyName = 'Alt';
 
-      activeDragNode.style.left = (normX * 100) + '%';
-      activeDragNode.style.top = (normY * 100) + '%';
-
-      if (activeDragNode._onMove) {
-        activeDragNode._onMove(normX, normY);
+        rebindingTarget.keyData.key = keyName.toUpperCase();
+        showToast(`✅ Đã gán phím: [${rebindingTarget.keyData.key}]`);
+        cancelRebinding();
+        renderKeymap();
       }
     });
 
-    window.addEventListener('mouseup', () => {
-      if (activeDragNode) {
-        activeDragNode.style.zIndex = '';
-        activeDragNode = null;
-      }
-    });
-
-    // Toggle Edit Mode vs Play Mode
-    function setEditMode(enable) {
-      isEditMode = enable;
-      if (isEditMode) {
-        document.body.classList.remove('play-mode');
-        document.body.classList.add('edit-mode');
-        elBtnToggleEditMode.classList.add('active');
-        elTxtEditMode.textContent = '✏️ Đang Sửa Layout';
-        ipcRenderer.invoke('set-keymap-overlay-interactive', true);
-      } else {
-        document.body.classList.remove('edit-mode');
-        document.body.classList.add('play-mode');
-        elBtnToggleEditMode.classList.remove('active');
-        elTxtEditMode.textContent = '🎮 Đang Chơi (Xuyên Thấu)';
-        ipcRenderer.invoke('set-keymap-overlay-interactive', false);
-      }
-    }
-
-    elBtnToggleEditMode.addEventListener('click', () => {
-      setEditMode(!isEditMode);
-    });
-
+    // ================= ➕ THÊM CÁC NÚT PHÍM =================
     elBtnAddKey.addEventListener('click', () => {
       if (!isEditMode) return;
-      const keyName = prompt('Nhập tên phím cần thêm (VD: F, G, V, B, 5, X):');
-      if (!keyName) return;
-      const keyLabel = prompt('Nhập nhãn mô tả (VD: Nhặt đồ, Kỹ năng, Hồi máu):') || keyName;
-
       if (!currentKeymap.keys) currentKeymap.keys = [];
-      const newKeyObj = {
-        key: keyName.toUpperCase(),
-        label: keyLabel,
-        x: 0.5,
-        y: 0.5
+      const newKey = {
+        key: 'F',
+        label: 'Phím Mới',
+        x: 0.50,
+        y: 0.50
       };
-      currentKeymap.keys.push(newKeyObj);
+      currentKeymap.keys.push(newKey);
       renderKeymap();
+      showToast('➕ Đã thêm nút mới ở giữa màn hình. Hãy kéo vào vị trí mong muốn!');
     });
 
+    elBtnAddJoystick.addEventListener('click', () => {
+      if (!isEditMode) return;
+      currentKeymap.joystick = {
+        key: 'WASD',
+        centerX: 0.20,
+        centerY: 0.70,
+        radius: 0.08,
+        label: 'Di Chuyển'
+      };
+      renderKeymap();
+      showToast('🕹️ Đã thêm cụm di chuyển WASD!');
+    });
+
+    elBtnAddFire.addEventListener('click', () => {
+      if (!isEditMode) return;
+      currentKeymap.fire = {
+        key: 'LClick',
+        x: 0.85,
+        y: 0.70,
+        label: 'Bắn'
+      };
+      renderKeymap();
+      showToast('🔥 Đã thêm nút Bắn (Chuột Trái)!');
+    });
+
+    elBtnAddScope.addEventListener('click', () => {
+      if (!isEditMode) return;
+      currentKeymap.scope = {
+        key: 'RClick',
+        x: 0.88,
+        y: 0.50,
+        label: 'Ngắm'
+      };
+      renderKeymap();
+      showToast('🎯 Đã thêm nút Ngắm (Chuột Phải)!');
+    });
+
+    // ================= 💾 LƯU & KHÔI PHỤC =================
     async function saveAndPlay() {
       if (currentKeymap) {
         try {
           await ipcRenderer.invoke('save-current-keymap', currentKeymap);
+          showToast('💾 Đã lưu layout keymap thành công!');
         } catch (e) {
           console.error(e);
         }
       }
-      ipcRenderer.invoke('toggle-keymap-overlay', false);
+      setEditMode(false);
     }
 
     elBtnSaveKeymap.addEventListener('click', saveAndPlay);
 
-    // Bấm F12 hoặc Escape trong Overlay để Lưu & Chơi tiếp
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'F12' || e.key === 'Escape') {
-        e.preventDefault();
-        saveAndPlay();
-      }
-    });
-
     elBtnResetKeymap.addEventListener('click', async () => {
-      if (!confirm('Bạn có chắc muốn khôi phục layout mặc định cho game này không?')) return;
+      if (!confirm('Bạn có muốn khôi phục lại layout phím mặc định của game không?')) return;
       try {
         currentKeymap = await ipcRenderer.invoke('reset-current-keymap');
         renderKeymap();
+        showToast('↺ Đã khôi phục layout mặc định!');
       } catch (e) {
         console.error(e);
       }
@@ -465,7 +1061,16 @@
       ipcRenderer.invoke('toggle-keymap-overlay', false);
     });
 
-    // On Load
+    // Nhận thông điệp từ Main process khi người dùng bấm F12 ngoài hệ điều hành
+    ipcRenderer.on('toggle-edit-mode', () => {
+      setEditMode(!isEditMode);
+    });
+
+    ipcRenderer.on('set-edit-mode', (event, enable) => {
+      setEditMode(enable);
+    });
+
+    // Khởi tạo
     loadLayout();
   </script>
 </body>
