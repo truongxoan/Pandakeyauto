@@ -2204,6 +2204,48 @@ if (window.api && window.api.onScreenshotCaptured) {
   });
 }
 
+// ================= 🌐 SCREEN TRANSLATOR CONTROLS (F10 / ALT+T) =================
+const elBtnTriggerScreenTranslate = document.getElementById('btnTriggerScreenTranslate');
+const elSelTranslatorLang = document.getElementById('selTranslatorLang');
+const elLblTranslatorStatus = document.getElementById('lblTranslatorStatus');
+
+if (elBtnTriggerScreenTranslate) {
+  elBtnTriggerScreenTranslate.addEventListener('click', async () => {
+    if (!window.api || !window.api.triggerScreenTranslate) return;
+    const lang = elSelTranslatorLang ? elSelTranslatorLang.value : 'eng+chi_sim';
+    if (elLblTranslatorStatus) {
+      elLblTranslatorStatus.textContent = 'Đang quét dịch...';
+      elLblTranslatorStatus.classList.add('active');
+    }
+    updateFooterLog('🌐 Đang quét chữ màn hình game và dịch thuật sang Tiếng Việt...');
+    playSoundCue('activate');
+
+    try {
+      const res = await window.api.triggerScreenTranslate({ language: lang, deviceId: currentDeviceId });
+      if (elLblTranslatorStatus) {
+        if (res && res.success) {
+          elLblTranslatorStatus.textContent = 'Đã dịch xong (F10)';
+        } else {
+          elLblTranslatorStatus.textContent = 'Lỗi dịch (F10)';
+        }
+      }
+      updateFooterLog('🌐 Hoàn tất dịch màn hình game!');
+    } catch (e) {
+      updateFooterLog(`[Dịch màn hình] Lỗi: ${e.message}`);
+      if (elLblTranslatorStatus) elLblTranslatorStatus.textContent = 'Lỗi kết nối';
+    }
+  });
+}
+
+if (elSelTranslatorLang) {
+  elSelTranslatorLang.addEventListener('change', () => {
+    if (window.api && window.api.setTranslatorConfig) {
+      window.api.setTranslatorConfig({ language: elSelTranslatorLang.value });
+      updateFooterLog(`🌐 Đã đổi ngôn ngữ nguồn OCR: ${elSelTranslatorLang.options[elSelTranslatorLang.selectedIndex].text}`);
+    }
+  });
+}
+
 // ================= KHỞI CHẠY LẦN ĐẦU =================
 window.addEventListener('DOMContentLoaded', () => {
   loadProfiles();

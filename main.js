@@ -115,6 +115,11 @@ const adbPath = path.join(binDir, 'adb.exe');
 const scrcpyPath = path.join(binDir, 'scrcpy.exe');
 keymapper = new Keymapper(customUserDataPath, adbPath);
 
+const ScreenTranslator = require('./translator');
+let screenTranslator = new ScreenTranslator(adbPath);
+let translatorOverlayWindow = null;
+let translatorSourceLang = 'eng+chi_sim';
+
 // ================= ⌨️ NATIVE KEYMAP HUD OVERLAY TRONG GAME (F12) =================
 function getScrcpyWindowBounds() {
   return new Promise((resolve) => {
@@ -299,6 +304,18 @@ function createWindow() {
   try {
     globalShortcut.register('F12', () => {
       try { toggleKeymapOverlay(); } catch (e) {}
+    });
+  } catch (e) {}
+
+  // 6. Phím tắt F10 & Alt+T toàn cục: Dịch Màn Hình Game Thời Gian Thực (In-Game Screen Translator)
+  try {
+    globalShortcut.register('F10', () => {
+      try { triggerScreenTranslateInternal(); } catch (e) {}
+    });
+  } catch (e) {}
+  try {
+    globalShortcut.register('Alt+T', () => {
+      try { triggerScreenTranslateInternal(); } catch (e) {}
     });
   } catch (e) {}
 
@@ -2229,6 +2246,100 @@ ipcMain.handle('open-screenshots-folder', async () => {
   }
   shell.openPath(screenshotsDir);
   return { success: true };
+});
+
+// ================= 🌐 DỊCH MÀN HÌNH GAME THỜI GIAN THỰC (F10 / ALT+T) =================
+async function openTranslatorOverlay() {
+  if (translatorOverlayWindow && !translatorOverlayWindow.isDestroyed()) {
+    translatorOverlayWindow.show();
+    translatorOverlayWindow.focus();
+    translatorOverlayWindow.webContents.send('start-translating');
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+
+  const winWidth = Math.min(580, Math.round(width * 0.45));
+  const winHeight = Math.min(680, Math.round(height * 0.82));
+
+  translatorOverlayWindow = new BrowserWindow({
+    width: winWidth,
+    height: winHeight,
+    x: Math.round((width - winWidth) / 2),
+    y: Math.round((height - winHeight) / 2),
+    show: false,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    resizable: true,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  translatorOverlayWindow.loadFile(path.join(__dirname, 'translator_overlay.html'));
+
+  translatorOverlayWindow.once('ready-to-show', () => {
+    if (translatorOverlayWindow && !translatorOverlayWindow.isDestroyed()) {
+      translatorOverlayWindow.show();
+      translatorOverlayWindow.focus();
+    }
+  });
+
+  translatorOverlayWindow.on('closed', () => {
+    translatorOverlayWindow = null;
+  });
+}
+
+function closeTranslatorOverlay() {
+  if (translatorOverlayWindow && !translatorOverlayWindow.isDestroyed()) {
+    translatorOverlayWindow.close();
+    translatorOverlayWindow = null;
+  }
+}
+
+async function triggerScreenTranslateInternal(options = {}) {
+  const targetId = options.deviceId || targetDeviceId || currentOptions.deviceId;
+  if (!screenTranslator) {
+    screenTranslator = new ScreenTranslator(adbPath);
+  }
+
+  // Mở cửa sổ Overlay ở trạng thái chờ
+  await openTranslatorOverlay();
+
+  showOsdNotification({
+    icon: '🌐',
+    game: 'DỊCH MÀN HÌNH GAME (F10)',
+    badge: 'ĐANG QUÉT CHỮ',
+    mode: 'Đang quét ký tự màn hình và dịch tiếng Việt...',
+    specs: 'Phím F10 / Esc để đóng'
+  });
+
+  const lang = options.language || translatorSourceLang || 'eng+chi_sim';
+  const result = await screenTranslator.processScreenTranslation(targetId, { language: lang });
+
+  if (translatorOverlayWindow && !translatorOverlayWindow.isDestroyed()) {
+    translatorOverlayWindow.webContents.send('display-translation-result', result);
+  }
+  return result;
+}
+
+ipcMain.handle('trigger-screen-translate', async (event, options = {}) => {
+  if (options.language) translatorSourceLang = options.language;
+  return triggerScreenTranslateInternal(options);
+});
+
+ipcMain.handle('close-translator-overlay', async () => {
+  closeTranslatorOverlay();
+  return { success: true };
+});
+
+ipcMain.handle('set-translator-config', async (event, { language }) => {
+  if (language) translatorSourceLang = language;
+  return { success: true, language: translatorSourceLang };
 });
 
 

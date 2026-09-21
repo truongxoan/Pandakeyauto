@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Pandakey Screen Translator HUD</title>
+  <style>
+    :root {
+      --cyan: #00f2fe;
+      --blue: #4facfe;
+      --green: #00ff88;
+      --purple: #9d4edd;
+      --bg-dark: rgba(10, 16, 32, 0.95);
+      --border-glow: rgba(0, 242, 254, 0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* ================= 🌐 TRANSLATOR WINDOW CONTAINER ================= */
+    .translator-card {
+      width: 100%;
+      max-width: 580px;
+      max-height: 85vh;
+      background: var(--bg-dark);
+      backdrop-filter: blur(20px);
+      border: 1.5px solid var(--border-glow);
+      border-radius: 20px;
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 242, 254, 0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes pop-in {
+      0% { opacity: 0; transform: scale(0.92) translateY(15px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Header */
+    .translator-header {
+      padding: 12px 18px;
+      background: rgba(16, 26, 52, 0.8);
+      border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-app-region: drag;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-icon {
+      font-size: 1.25rem;
+    }
+
+    .header-title {
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: var(--cyan);
+      letter-spacing: 0.5px;
+    }
+
+    .lang-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      background: rgba(0, 242, 254, 0.15);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      color: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-header {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .btn-header:hover {
+      background: rgba(0, 242, 254, 0.2);
+      border-color: var(--cyan);
+      color: #fff;
+    }
+
+    .btn-close:hover {
+      background: rgba(255, 51, 102, 0.25);
+      border-color: #ff3366;
+      color: #ff3366;
+    }
+
+    /* Content Area */
+    .translator-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .translator-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .translator-body::-webkit-scrollbar-thumb {
+      background: rgba(0, 242, 254, 0.3);
+      border-radius: 3px;
+    }
+
+    /* Translation Item Card */
+    .trans-item {
+      background: rgba(18, 28, 54, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 3px solid var(--cyan);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .trans-item:hover {
+      background: rgba(24, 38, 72, 0.8);
+      border-color: rgba(0, 242, 254, 0.4);
+    }
+
+    .trans-original {
+      font-size: 0.75rem;
+      color: #8da2c0;
+      font-style: italic;
+      line-height: 1.4;
+      user-select: text;
+    }
+
+    .trans-vietnamese {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.5;
+      letter-spacing: 0.2px;
+      user-select: text;
+    }
+
+    /* Loading State */
+    .loading-state {
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .laser-scanner {
+      width: 140px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+      box-shadow: 0 0 12px var(--cyan);
+      animation: scan-pulse 1.2s infinite alternate ease-in-out;
+      border-radius: 2px;
+    }
+
+    @keyframes scan-pulse {
+      0% { transform: scaleX(0.4); opacity: 0.4; }
+      100% { transform: scaleX(1.4); opacity: 1; }
+    }
+
+    .loading-text {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .loading-sub {
+      font-size: 0.72rem;
+      color: #7b8fa8;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 30px;
+      text-align: center;
+      color: #8da2c0;
+      font-size: 0.82rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Footer */
+    .translator-footer {
+      padding: 8px 18px;
+      background: rgba(8, 14, 28, 0.9);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #64748b;
+    }
+
+    .footer-hints {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .key-badge-hint {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #cbd5e1;
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.65rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="translator-card">
+    <!-- Header -->
+    <div class="translator-header">
+      <div class="header-left">
+        <span class="header-icon">🌐</span>
+        <span class="header-title">DỊCH MÀN HÌNH GAME</span>
+        <span class="lang-badge" id="lblLang">TRUNG / ANH ➔ VIỆT</span>
+      </div>
+      <div class="header-right">
+        <button class="btn-header" id="btnRetry" title="Quét và dịch lại màn hình hiện tại (F10)">🔄 Dịch Lại</button>
+        <button class="btn-header" id="btnCopyAll" title="Sao chép toàn bộ bản dịch">📋 Sao Chép</button>
+        <button class="btn-header btn-close" id="btnClose" title="Đóng cửa sổ dịch (Esc / F10)">✖ Đóng</button>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="translator-body" id="transBody">
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState">
+        <div class="laser-scanner"></div>
+        <div class="loading-text" id="txtLoading">Đang quét màn hình game qua ADB...</div>
+        <div class="loading-sub">Hệ thống AI OCR đang bóc tách ký tự và dịch thuật</div>
+      </div>
+
+      <!-- Container for translated items -->
+      <div id="transItemsContainer" style="display: none; display: flex; flex-direction: column; gap: 10px;"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="translator-footer">
+      <span id="txtStatus">Sẵn sàng</span>
+      <div class="footer-hints">
+        <span>Bấm <span class="key-badge-hint">F10</span> Dịch lại</span>
+        <span>Bấm <span class="key-badge-hint">Esc</span> Đóng</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const elBody = document.getElementById('transBody');
+    const elLoading = document.getElementById('loadingState');
+    const elTxtLoading = document.getElementById('txtLoading');
+    const elContainer = document.getElementById('transItemsContainer');
+    const elBtnRetry = document.getElementById('btnRetry');
+    const elBtnCopyAll = document.getElementById('btnCopyAll');
+    const elBtnClose = document.getElementById('btnClose');
+    const elStatus = document.getElementById('txtStatus');
+
+    let currentTranslationData = null;
+
+    function setLoading(isLoading, text = 'Đang quét màn hình...') {
+      if (isLoading) {
+        elLoading.style.display = 'flex';
+        elContainer.style.display = 'none';
+        elTxtLoading.textContent = text;
+        elStatus.textContent = 'Đang nhận diện...';
+      } else {
+        elLoading.style.display = 'none';
+        elContainer.style.display = 'flex';
+      }
+    }
+
+    function renderResults(data) {
+      currentTranslationData = data;
+      setLoading(false);
+
+      elContainer.innerHTML = '';
+
+      if (!data || !data.success) {
+        elContainer.innerHTML = `
+          <div class="empty-state">
+            <span style="font-size: 1.5rem;">⚠️</span>
+            <span>${data ? data.message : 'Không thể thực hiện dịch thuật.'}</span>
+          </div>
+        `;
+        elStatus.textContent = 'Thất bại';
+        return;
+      }
+
+      if (data.isEmpty || !data.items || data.items.length === 0) {
+        elContainer.innerHTML = `
+          <div class="empty-state">
+            <span style="font-size: 1.5rem;">🔍</span>
+            <span>${data.message || 'Không phát hiện thấy văn bản hoặc chữ trên màn hình hiện tại.'}</span>
+            <small style="color: #64748b;">Hãy chắc chắn màn hình game đang có chữ hiển thị và thử lại.</small>
+          </div>
+        `;
+        elStatus.textContent = 'Không có chữ';
+        return;
+      }
+
+      data.items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'trans-item';
+        div.innerHTML = `
+          <div class="trans-original">${escapeHtml(item.original)}</div>
+          <div class="trans-vietnamese">🇻🇳 ${escapeHtml(item.translated)}</div>
+        `;
+        elContainer.appendChild(div);
+      });
+
+      elStatus.textContent = `Hoàn tất trong ${(data.elapsedMs / 1000).toFixed(1)}s lúc ${data.timestamp || ''}`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+    }
+
+    async function triggerTranslate() {
+      setLoading(true, 'Đang quét ký tự trên màn hình...');
+      try {
+        const result = await ipcRenderer.invoke('trigger-screen-translate');
+        renderResults(result);
+      } catch (e) {
+        renderResults({ success: false, message: e.message });
+      }
+    }
+
+    elBtnRetry.addEventListener('click', triggerTranslate);
+
+    elBtnCopyAll.addEventListener('click', () => {
+      if (currentTranslationData && currentTranslationData.fullTranslated) {
+        navigator.clipboard.writeText(currentTranslationData.fullTranslated);
+        elBtnCopyAll.textContent = '✅ Đã Chép';
+        setTimeout(() => {
+          elBtnCopyAll.textContent = '📋 Sao Chép';
+        }, 1800);
+      }
+    });
+
+    elBtnClose.addEventListener('click', () => {
+      ipcRenderer.invoke('close-translator-overlay');
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key === 'F10') {
+        e.preventDefault();
+        ipcRenderer.invoke('close-translator-overlay');
+      }
+    });
+
+    // Nhận dữ liệu dịch truyền từ main process
+    ipcRenderer.on('display-translation-result', (event, data) => {
+      renderResults(data);
+    });
+
+    ipcRenderer.on('start-translating', () => {
+      setLoading(true, 'Đang quét ký tự màn hình game...');
+    });
+  </script>
+</body>
+</html>

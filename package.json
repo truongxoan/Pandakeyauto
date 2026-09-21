@@ -78,5 +78,8 @@
       "shortcutName": "Pandakeyauto Pro",
       "artifactName": "Pandakeyauto-Pro-Setup.exe"
     }
+  },
+  "dependencies": {
+    "tesseract.js": "^7.0.0"
   }
 }

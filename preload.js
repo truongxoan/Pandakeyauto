@@ -102,6 +102,11 @@ contextBridge.exposeInMainWorld('api', {
   captureInstantScreenshot: (payload) => ipcRenderer.invoke('capture-instant-screenshot', payload),
   openScreenshotsFolder: () => ipcRenderer.invoke('open-screenshots-folder'),
 
+  // 🌐 Screen Translator APIs (F10 / Alt+T)
+  triggerScreenTranslate: (options) => ipcRenderer.invoke('trigger-screen-translate', options),
+  closeTranslatorOverlay: () => ipcRenderer.invoke('close-translator-overlay'),
+  setTranslatorConfig: (config) => ipcRenderer.invoke('set-translator-config', config),
+
   // Core Events
   onRequestStartControl: (callback) => ipcRenderer.on('request-start-control', () => callback()),
   onOtgLog: (callback) => ipcRenderer.on('otg-log', (_event, value) => callback(value)),

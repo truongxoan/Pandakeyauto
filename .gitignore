@@ -7,3 +7,5 @@ scrcpy.zip
 temp_scrcpy/
 dist/
 Recordings/
+*.traineddata
+

@@ -649,6 +649,26 @@
                   <span class="status-chip" id="lblLatestScreenshot" style="overflow:hidden; text-overflow:ellipsis; max-width:180px;">Chưa chụp ảnh</span>
                 </div>
               </div>
+
+              <!-- 10. DỊCH MÀN HÌNH GAME THỜI GIAN THỰC (F10 / ALT+T) -->
+              <div class="combat-feature-item">
+                <div class="feature-item-header">
+                  <div class="feature-item-title">
+                    <span class="item-emoji">🌐</span>
+                    <strong>Dịch Màn Hình Game (F10 / Alt+T)</strong>
+                  </div>
+                  <button class="btn-action btn-action-sm btn-glow-action" id="btnTriggerScreenTranslate">🌐 Dịch Ngay (F10)</button>
+                </div>
+                <p class="feature-item-desc">Tự động quét màn hình, nhận diện chữ tiếng Trung/Anh bằng AI OCR và dịch sang Tiếng Việt ngay trong game khi nhấn <strong>F10</strong> hoặc <strong>Alt+T</strong>.</p>
+                <div class="action-row-mt" style="display:flex; gap:8px; align-items:center;">
+                  <select id="selTranslatorLang" class="select-modern" style="flex: 1;">
+                    <option value="eng+chi_sim" selected>🇨🇳 Trung & 🇬🇧 Anh ➔ 🇻🇳 Tiếng Việt</option>
+                    <option value="chi_sim">🇨🇳 Tiếng Trung ➔ 🇻🇳 Tiếng Việt</option>
+                    <option value="eng">🇬🇧 Tiếng Anh ➔ 🇻🇳 Tiếng Việt</option>
+                  </select>
+                  <span class="status-chip" id="lblTranslatorStatus">Sẵn sàng (F10)</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
