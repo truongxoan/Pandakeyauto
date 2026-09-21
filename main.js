@@ -416,6 +416,7 @@ app.on('will-quit', () => {
   if (rapidFireInterval) {
     clearInterval(rapidFireInterval);
   }
+  stopSniperWorker();
 });
 
 app.on('window-all-closed', () => {
@@ -1970,9 +1971,37 @@ ipcMain.handle('toggle-digital-vibrance', async (event, { forceState, deviceId }
 });
 
 // ================= 🎯 QUICK-SWITCH SNIPER (AWM SIÊU TỐC) =================
+let sniperProcess = null;
+
+function startSniperWorker() {
+  stopSniperWorker();
+  const exePath = path.join(binDir, 'sniper_assist.exe');
+  if (fs.existsSync(exePath)) {
+    try {
+      sniperProcess = spawn(exePath, ['50', '60'], {
+        cwd: binDir,
+        windowsHide: true
+      });
+      sniperProcess.on('close', () => {
+        sniperProcess = null;
+      });
+    } catch (e) {
+      console.error('Lỗi khi chạy sniper_assist.exe:', e);
+    }
+  }
+}
+
+function stopSniperWorker() {
+  if (sniperProcess) {
+    try { sniperProcess.kill(); } catch (e) {}
+    sniperProcess = null;
+  }
+}
+
 function toggleQuickSniperGlobal(forceState) {
   isQuickSniperActive = forceState !== undefined ? !!forceState : !isQuickSniperActive;
   if (isQuickSniperActive) {
+    startSniperWorker();
     showOsdNotification({
       icon: '🎯',
       game: 'QUICK-SWITCH SNIPER',
@@ -1982,6 +2011,7 @@ function toggleQuickSniperGlobal(forceState) {
     });
     sendLog('🎯 [VIP Sniper] Đã BẬT Quick-Switch Sniper (F7)');
   } else {
+    stopSniperWorker();
     showOsdNotification({
       icon: '⚪',
       game: 'QUICK-SWITCH SNIPER',
