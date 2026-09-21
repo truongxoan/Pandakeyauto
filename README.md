@@ -58,6 +58,21 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
   - Hiển thị HUD OSD nổi trên màn hình game kèm âm thanh thông báo.
 - **☁️ Đồng Bộ Profiles Vào GitHub Cloud (Gist)**:
   - Lưu trữ và tải về profile của bạn ở mọi nơi chỉ với 1 click Upload / Download.
+- **📑 Bố Cục 3 Sub-Tabs Tinh Gọn Trong Tab Chiến Game**:
+  - **Thông Số Stream**: Tinh chỉnh FPS (60 - 144Hz), Bitrate (4M - 32M), Giới hạn độ phân giải, Video Codec (H.265/H.264), Độ đệm hình/tiếng.
+  - **Chế Độ Chơi**: Chuyển nhanh giữa các cấu hình Thi đấu, Cân bằng, hoặc Chuột bàn phím trực tiếp màn thật điện thoại.
+  - **VIP Combat Tactics**: Khu vực tích hợp các công cụ chiến thuật độc quyền cho game thủ.
+- **🎯 VIP: Ghìm Tâm Tự Động Siêu Tốc (Recoil Control System - Phím F6)**:
+  - Công nghệ Win32 Native Zero-Delay mô phỏng ghìm tâm phần cứng.
+  - Tự động kéo tâm súng xuống khi giữ chuột trái sấy đạn liên thanh.
+  - Tùy chỉnh lực ghìm Trục Y (px), Độ rung ngẫu nhiên Trục X (Jitter chống quét), và Độ trễ bắt đầu ghìm.
+  - Hỗ trợ bật/tắt tức thì bằng phím nóng **F6** toàn cầu hoặc nút gạt nhanh trên góc giao diện.
+- **📱 VIP: Tỉ Lệ Màn Hình iPad 4:3 (iPad View Stretched)**:
+  - Ép tỉ lệ hiển thị 4:3 mở rộng góc nhìn theo chiều dọc, nhân vật to và rõ nét hơn, tối ưu headshot cho Free Fire, PUBG Mobile, Delta Force.
+  - 1-click khôi phục ngay độ phân giải gốc của điện thoại mà không cần khởi động lại máy.
+- **🤖 VIP: Bộ Ghi & Phát Lặp Macro Tự Động (Auto Farm Macro Recorder)**:
+  - Ghi lại các tọa độ chạm cảm ứng trên màn hình điện thoại và tự động lặp lại liên tục theo chu kỳ.
+  - Treo máy cày cuốc tài nguyên, hoàn thành nhiệm vụ sự kiện game rảnh tay.
 - **🎯 VIP: Tâm Ngắm Ảo (Crosshair HUD Overlay)**:
   - Tâm ngắm trong suốt ghim giữa màn hình, chuột bấm xuyên thấu 100%, hỗ trợ sấy súng không cần mở scope.
 - **🚀 VIP: 1-Click Game Booster (Tối Ưu 0x Animation)**:
