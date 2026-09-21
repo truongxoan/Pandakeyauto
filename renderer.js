@@ -1920,6 +1920,23 @@ if (elBtnToggleKeymapperDirect) {
   });
 }
 
+const elChipOpenKeymapTop = document.getElementById('chipOpenKeymapTop');
+if (elChipOpenKeymapTop) {
+  elChipOpenKeymapTop.addEventListener('click', async () => {
+    if (typeof switchSubTab === 'function') {
+      switchSubTab('subtabCombatVip');
+    }
+    const targetCard = document.getElementById('btnOpenKeymapOverlay');
+    if (targetCard) {
+      targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    if (window.api && window.api.toggleKeymapOverlay) {
+      await window.api.toggleKeymapOverlay(true);
+      updateFooterLog('⌨️ Đã mở cửa sổ Keymap HUD Overlay (Chế độ kéo-thả layout phím)');
+    }
+  });
+}
+
 if (elBtnOpenKeymapOverlay) {
   elBtnOpenKeymapOverlay.addEventListener('click', async () => {
     if (window.api && window.api.toggleKeymapOverlay) {
