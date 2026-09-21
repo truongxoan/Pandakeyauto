@@ -62,6 +62,17 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
   - **Thông Số Stream**: Tinh chỉnh FPS (60 - 144Hz), Bitrate (4M - 32M), Giới hạn độ phân giải, Video Codec (H.265/H.264), Độ đệm hình/tiếng.
   - **Chế Độ Chơi**: Chuyển nhanh giữa các cấu hình Thi đấu, Cân bằng, hoặc Chuột bàn phím trực tiếp màn thật điện thoại.
   - **VIP Combat Tactics**: Khu vực tích hợp các công cụ chiến thuật độc quyền cho game thủ.
+- **🎮 VIP: Native Keymapper Trực Tiếp (Không Cần App Thứ 3 Như Panda / Octopus)**:
+  - Tự động ánh xạ chuột & bàn phím PC thành các sự kiện cảm ứng (Touch Injection) trực tiếp vào kernel Android qua ADB.
+  - Cụm di chuyển **WASD Joystick 360°**, **Chuột Trái Bắn**, **Chuột Phải Ngắm**, và các phím chức năng tùy biến (Space, C, Z, R, 1, 2, 3, F, G, E, Q, Shift, Tab...).
+  - Tích hợp **Keybind HUD Overlay & Bộ Kéo-Thả Layout Trực Quan**: Cho phép kéo thả trực tiếp từng nút phím trên màn hình game, tùy biến vị trí và lưu theo từng game riêng biệt; chuyển sang chế độ chơi xuyên thấu chuột 100% không làm cản trở thao tác.
+- **📡 VIP: 1-Click Kết Nối Wi-Fi Không Dây (Wireless ADB 0-Cáp)**:
+  - Tự động quét và phát hiện địa chỉ IP Wi-Fi của điện thoại, kích hoạt cổng TCP/IP `5555` và kết nối không dây siêu tốc.
+  - Cho phép **rút cáp USB ra** và chơi game tự do qua mạng Wi-Fi (khuyên dùng băng tần 5GHz/6GHz cho độ trễ ~1ms).
+- **🎛️ VIP: Bộ Lọc & Khuếch Đại Âm Thanh Bước Chân (FPS Footstep Booster)**:
+  - Tối ưu hóa dải tần số 250Hz – 2.5kHz làm nổi bật tiếng bước chân di chuyển, tiếng trèo tường và nạp đạn của kẻ địch xuyên tường/bụi cỏ; nén tiếng sấy đạn to để chống chói tai.
+- **👁️ VIP: Kích Màu Địch & Kính Nhìn Đêm (Digital Vibrance / Black Equalizer)**:
+  - Đẩy độ bão hòa màu sắc (Vibrance) và tăng sáng các góc tối, giúp phát hiện kẻ địch núp trong lùm cây hoặc bóng râm nhanh hơn 200%.
 - **🎯 VIP: Ghìm Tâm Tự Động Siêu Tốc (Recoil Control System - Phím F6)**:
   - Công nghệ Win32 Native Zero-Delay mô phỏng ghìm tâm phần cứng.
   - Tự động kéo tâm súng xuống khi giữ chuột trái sấy đạn liên thanh.

@@ -526,6 +526,72 @@
                   </div>
                 </div>
               </div>
+
+              <!-- 4. NATIVE KEYMAPPER DIRECT INJECTION (KHÔNG CẦN APP THỨ 3) -->
+              <div class="combat-feature-item">
+                <div class="feature-item-header">
+                  <div class="feature-item-title">
+                    <span class="item-emoji">🎮</span>
+                    <strong>Gán Phím Trực Tiếp (Native Keymapper)</strong>
+                  </div>
+                  <div class="toggle-switch-wrapper">
+                    <span class="switch-state-text" id="lblKeymapperDirectState">TẮT</span>
+                    <button class="btn-toggle-switch" id="btnToggleKeymapperDirect" title="Bật/Tắt gán phím trực tiếp không cần Panda">
+                      <span class="switch-ball"></span>
+                    </button>
+                  </div>
+                </div>
+                <p class="feature-item-desc">Ánh xạ bàn phím & chuột PC thành thao tác cảm ứng chạm, vuốt trực tiếp vào màn hình điện thoại qua ADB Kernel (Không cần Panda Mouse Pro / Octopus).</p>
+                
+                <div class="keymapper-controls-box">
+                  <div class="form-row-compact">
+                    <select id="selKeymapGame" class="select-modern">
+                      <option value="freefire" selected>Layout: Free Fire (WASD + Chuột Trái Bắn + Phím Tắt)</option>
+                      <option value="deltaforce">Layout: Delta Force (Tác Chiến + Nghiêng Người)</option>
+                      <option value="pubg">Layout: PUBG Mobile / COD (Balo + Scope + Nhặt)</option>
+                    </select>
+                  </div>
+                  <div class="keymap-btn-row">
+                    <button class="btn-action btn-action-sm btn-glow-action" id="btnOpenKeymapOverlay">✏️ Mở Bộ Kéo-Thả Phím (HUD)</button>
+                    <button class="btn-action btn-action-sm btn-outline" id="btnResetKeymapPreset">↺ Mặc Định</button>
+                    <span class="status-chip" id="keymapperStatusChip" style="margin-left:auto; align-self:center;">Đã nạp layout</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 5. BỘ LỌC BƯỚC CHÂN FPS (FOOTSTEP SOUND BOOSTER) -->
+              <div class="combat-feature-item">
+                <div class="feature-item-header">
+                  <div class="feature-item-title">
+                    <span class="item-emoji">🎛️</span>
+                    <strong>Bộ Lọc Âm Bước Chân (Footstep Booster)</strong>
+                  </div>
+                  <div class="toggle-switch-wrapper">
+                    <span class="switch-state-text" id="lblFootstepBoosterState">TẮT</span>
+                    <button class="btn-toggle-switch" id="btnToggleFootstepBooster" title="Bật/Tắt bộ khuếch đại âm thanh bước chân">
+                      <span class="switch-ball"></span>
+                    </button>
+                  </div>
+                </div>
+                <p class="feature-item-desc">Tự động tăng cường dải tần số 250Hz - 2.5kHz làm nổi bật tiếng bước chân kẻ địch, tiếng nạp đạn và giảm chói tiếng súng sấy.</p>
+              </div>
+
+              <!-- 6. KÍCH MÀU ĐỊCH & NHÌN ĐÊM (DIGITAL VIBRANCE / BLACK EQ) -->
+              <div class="combat-feature-item">
+                <div class="feature-item-header">
+                  <div class="feature-item-title">
+                    <span class="item-emoji">👁️</span>
+                    <strong>Kích Màu Địch & Nhìn Đêm (Digital Vibrance)</strong>
+                  </div>
+                  <div class="toggle-switch-wrapper">
+                    <span class="switch-state-text" id="lblDigitalVibranceState">TẮT</span>
+                    <button class="btn-toggle-switch" id="btnToggleDigitalVibrance" title="Bật/Tắt chế độ kích màu địch và nhìn đêm">
+                      <span class="switch-ball"></span>
+                    </button>
+                  </div>
+                </div>
+                <p class="feature-item-desc">Tăng độ bão hòa màu sắc (Vibrance) và tăng sáng các góc tối (Black Equalizer) giúp phát hiện kẻ địch núp trong lùm cỏ hoặc nhà tối.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -933,11 +999,18 @@
           <span class="section-sub-tip">Rút cáp tự do</span>
         </div>
         <p class="feature-item-desc">
-          Tự động mở cổng 5555 và kết nối qua Wi-Fi. Bấm xong là có thể rút cáp USB chơi game tự do mà vẫn chiếu màn hình mượt mà!
+          Tự động dò tìm IP Wi-Fi điện thoại, mở cổng TCP/IP 5555 và kết nối không dây. Bấm xong là có thể rút cáp USB chơi game thoải mái!
         </p>
-        <div class="action-row-mt">
-          <button class="btn-action btn-glow-action" id="btnActivateWirelessAdb">📡 KÍCH HOẠT KHÔNG DÂY (RÚT CÁP)</button>
-          <span class="status-chip" id="wirelessStatusBadge">Đang kết nối qua cáp USB</span>
+        <div class="wireless-connect-card" style="margin-top: 8px;">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <input type="text" id="txtWirelessIp" placeholder="Nhập hoặc bấm Dò IP Wi-Fi..." class="select-modern" style="flex: 1; padding: 6px 12px; height: 36px;">
+            <input type="text" id="txtWirelessPort" value="5555" class="select-modern" style="width: 80px; text-align: center; padding: 6px; height: 36px;">
+            <button class="btn-action btn-action-sm btn-outline" id="btnDetectIp">🔍 Dò IP</button>
+          </div>
+          <div class="action-row-mt" style="display: flex; gap: 10px; align-items: center; margin-top: 0;">
+            <button class="btn-action btn-glow-action" id="btnActivateWirelessAdb">📡 KÍCH HOẠT KHÔNG DÂY (RÚT CÁP)</button>
+            <span class="status-chip" id="wirelessStatusBadge">Đang kết nối qua cáp USB</span>
+          </div>
         </div>
       </div>
 

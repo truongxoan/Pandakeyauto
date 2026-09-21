@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Keymap HUD Overlay - Pandakeyauto Pro</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-drag: none;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      position: relative;
+    }
+
+    /* Top Control Bar */
+    .overlay-toolbar {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(10, 15, 29, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 242, 254, 0.4);
+      padding: 6px 16px;
+      border-radius: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 242, 254, 0.2);
+      z-index: 10000;
+      transition: all 0.3s ease;
+    }
+    .overlay-toolbar.hidden {
+      opacity: 0.15;
+      transform: translateX(-50%) translateY(-70%);
+    }
+    .overlay-toolbar:hover {
+      opacity: 1 !important;
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    .toolbar-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #00f2fe;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-tool {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #e0e6ed;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .btn-tool:hover {
+      background: rgba(0, 242, 254, 0.2);
+      border-color: #00f2fe;
+      color: #fff;
+    }
+    .btn-tool.active {
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      color: #050b14;
+      border-color: #00f2fe;
+      font-weight: 800;
+    }
+    .btn-tool-danger:hover {
+      background: rgba(255, 75, 75, 0.25);
+      border-color: #ff4b4b;
+      color: #ff4b4b;
+    }
+
+    /* Keymap Canvas Container */
+    #keymapCanvas {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Keybind Elements */
+    .key-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      transition: box-shadow 0.2s;
+      z-index: 100;
+    }
+    .key-node:active {
+      cursor: grabbing;
+    }
+    .key-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(10, 18, 36, 0.75);
+      border: 2px solid #00f2fe;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.4), inset 0 0 6px rgba(0, 242, 254, 0.2);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-transform: uppercase;
+      backdrop-filter: blur(4px);
+    }
+    .key-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #4facfe;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 1px 6px;
+      border-radius: 8px;
+      margin-top: 3px;
+      white-space: nowrap;
+      text-shadow: 0 1px 2px #000;
+      pointer-events: none;
+    }
+
+    /* Fire and Scope Special Nodes */
+    .key-node.fire .key-badge {
+      width: 44px;
+      height: 44px;
+      border-color: #ff3366;
+      box-shadow: 0 0 16px rgba(255, 51, 102, 0.6), inset 0 0 8px rgba(255, 51, 102, 0.3);
+      color: #ff3366;
+      background: rgba(40, 10, 20, 0.75);
+      font-size: 1.1rem;
+    }
+    .key-node.fire .key-label {
+      color: #ff6688;
+    }
+
+    .key-node.scope .key-badge {
+      width: 42px;
+      height: 42px;
+      border-color: #00ff88;
+      box-shadow: 0 0 16px rgba(0, 255, 136, 0.6), inset 0 0 8px rgba(0, 255, 136, 0.3);
+      color: #00ff88;
+      background: rgba(10, 36, 20, 0.75);
+      font-size: 1rem;
+    }
+    .key-node.scope .key-label {
+      color: #66ffaa;
+    }
+
+    /* Joystick Special Node */
+    .joystick-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 2px dashed rgba(0, 242, 254, 0.6);
+      background: rgba(0, 242, 254, 0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      z-index: 90;
+    }
+    .joystick-node:active {
+      cursor: grabbing;
+    }
+    .joystick-center {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(10, 20, 40, 0.85);
+      border: 2px solid #00f2fe;
+      color: #00f2fe;
+      font-weight: 800;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 14px rgba(0, 242, 254, 0.5);
+    }
+    .joystick-arrow {
+      position: absolute;
+      font-size: 0.7rem;
+      color: rgba(0, 242, 254, 0.8);
+      font-weight: bold;
+    }
+    .arrow-w { top: 6px; }
+    .arrow-s { bottom: 6px; }
+    .arrow-a { left: 8px; }
+    .arrow-d { right: 8px; }
+
+    /* Play mode style */
+    body.play-mode .overlay-toolbar {
+      opacity: 0.15;
+    }
+    body.play-mode .key-node {
+      cursor: default;
+      pointer-events: none;
+    }
+    body.play-mode .joystick-node {
+      cursor: default;
+      pointer-events: none;
+    }
+    body.play-mode .key-badge {
+      opacity: 0.65;
+    }
+    body.play-mode .key-label {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body class="edit-mode">
+  <!-- Toolbar -->
+  <div class="overlay-toolbar" id="overlayToolbar">
+    <div class="toolbar-title">
+      <span>🎮</span>
+      <span>KEYMAP HUD VIP</span>
+    </div>
+    <button class="btn-tool active" id="btnToggleEditMode" title="Chuyển đổi giữa kéo thả phím và xuyên thấu chuột">
+      <span id="txtEditMode">✏️ Đang Sửa Layout</span>
+    </button>
+    <button class="btn-tool" id="btnAddKey" title="Thêm nút phím mới">➕ Thêm Phím</button>
+    <button class="btn-tool" id="btnSaveKeymap" title="Lưu lại cấu hình layout vào máy">💾 Lưu Layout</button>
+    <button class="btn-tool" id="btnResetKeymap" title="Khôi phục layout mặc định của game">↺ Mặc Định</button>
+    <button class="btn-tool btn-tool-danger" id="btnCloseOverlay" title="Đóng cửa sổ overlay phím">✖ Đóng</button>
+  </div>
+
+  <!-- Keymap Nodes Container -->
+  <div id="keymapCanvas"></div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    let currentKeymap = null;
+    let isEditMode = true;
+    let activeDragNode = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    const elToolbar = document.getElementById('overlayToolbar');
+    const elBtnToggleEditMode = document.getElementById('btnToggleEditMode');
+    const elTxtEditMode = document.getElementById('txtEditMode');
+    const elBtnAddKey = document.getElementById('btnAddKey');
+    const elBtnSaveKeymap = document.getElementById('btnSaveKeymap');
+    const elBtnResetKeymap = document.getElementById('btnResetKeymap');
+    const elBtnCloseOverlay = document.getElementById('btnCloseOverlay');
+    const elCanvas = document.getElementById('keymapCanvas');
+
+    // Request active game keymap
+    async function loadLayout() {
+      try {
+        currentKeymap = await ipcRenderer.invoke('get-current-keymap');
+        renderKeymap();
+      } catch (e) {
+        console.error('Lỗi khi tải layout:', e);
+      }
+    }
+
+    function renderKeymap() {
+      elCanvas.innerHTML = '';
+      if (!currentKeymap) return;
+
+      // 1. Render Joystick
+      if (currentKeymap.joystick) {
+        const j = currentKeymap.joystick;
+        const jNode = document.createElement('div');
+        jNode.className = 'joystick-node';
+        jNode.style.left = (j.centerX * 100) + '%';
+        jNode.style.top = (j.centerY * 100) + '%';
+        jNode.dataset.type = 'joystick';
+
+        jNode.innerHTML = `
+          <div class="joystick-arrow arrow-w">W</div>
+          <div class="joystick-arrow arrow-s">S</div>
+          <div class="joystick-arrow arrow-a">A</div>
+          <div class="joystick-arrow arrow-d">D</div>
+          <div class="joystick-center">WASD</div>
+        `;
+        setupDraggable(jNode, (normX, normY) => {
+          j.centerX = normX;
+          j.centerY = normY;
+        });
+        elCanvas.appendChild(jNode);
+      }
+
+      // 2. Render Fire
+      if (currentKeymap.fire) {
+        const f = currentKeymap.fire;
+        const fNode = createKeyNode('🔥', f.label || 'Bắn', f.x, f.y, 'fire', (normX, normY) => {
+          f.x = normX;
+          f.y = normY;
+        });
+        elCanvas.appendChild(fNode);
+      }
+
+      // 3. Render Scope
+      if (currentKeymap.scope) {
+        const s = currentKeymap.scope;
+        const sNode = createKeyNode('🎯', s.label || 'Ngắm', s.x, s.y, 'scope', (normX, normY) => {
+          s.x = normX;
+          s.y = normY;
+        });
+        elCanvas.appendChild(sNode);
+      }
+
+      // 4. Render Normal Keys
+      if (currentKeymap.keys && Array.isArray(currentKeymap.keys)) {
+        currentKeymap.keys.forEach((k, idx) => {
+          const kNode = createKeyNode(k.key, k.label || k.key, k.x, k.y, '', (normX, normY) => {
+            k.x = normX;
+            k.y = normY;
+          });
+          elCanvas.appendChild(kNode);
+        });
+      }
+    }
+
+    function createKeyNode(text, label, normX, normY, extraClass, onMove) {
+      const node = document.createElement('div');
+      node.className = `key-node ${extraClass}`;
+      node.style.left = (normX * 100) + '%';
+      node.style.top = (normY * 100) + '%';
+
+      node.innerHTML = `
+        <div class="key-badge">${text}</div>
+        <div class="key-label">${label}</div>
+      `;
+
+      setupDraggable(node, onMove);
+      return node;
+    }
+
+    function setupDraggable(element, onMove) {
+      element.addEventListener('mousedown', (e) => {
+        if (!isEditMode) return;
+        activeDragNode = element;
+        const rect = element.getBoundingClientRect();
+        dragOffsetX = e.clientX - (rect.left + rect.width / 2);
+        dragOffsetY = e.clientY - (rect.top + rect.height / 2);
+        element.style.zIndex = 1000;
+        e.stopPropagation();
+      });
+
+      element.addEventListener('dblclick', () => {
+        if (!isEditMode) return;
+        const newKey = prompt('Nhập phím mới cho nút này (VD: E, Q, Space, Shift, 4):');
+        if (newKey) {
+          const badge = element.querySelector('.key-badge');
+          if (badge) badge.textContent = newKey.toUpperCase();
+        }
+      });
+    }
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isEditMode || !activeDragNode) return;
+      const x = e.clientX - dragOffsetX;
+      const y = e.clientY - dragOffsetY;
+
+      const normX = Math.max(0.02, Math.min(0.98, x / window.innerWidth));
+      const normY = Math.max(0.02, Math.min(0.98, y / window.innerHeight));
+
+      activeDragNode.style.left = (normX * 100) + '%';
+      activeDragNode.style.top = (normY * 100) + '%';
+
+      if (activeDragNode._onMove) {
+        activeDragNode._onMove(normX, normY);
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (activeDragNode) {
+        activeDragNode.style.zIndex = '';
+        activeDragNode = null;
+      }
+    });
+
+    // Toggle Edit Mode vs Play Mode
+    function setEditMode(enable) {
+      isEditMode = enable;
+      if (isEditMode) {
+        document.body.classList.remove('play-mode');
+        document.body.classList.add('edit-mode');
+        elBtnToggleEditMode.classList.add('active');
+        elTxtEditMode.textContent = '✏️ Đang Sửa Layout';
+        ipcRenderer.invoke('set-keymap-overlay-interactive', true);
+      } else {
+        document.body.classList.remove('edit-mode');
+        document.body.classList.add('play-mode');
+        elBtnToggleEditMode.classList.remove('active');
+        elTxtEditMode.textContent = '🎮 Đang Chơi (Xuyên Thấu)';
+        ipcRenderer.invoke('set-keymap-overlay-interactive', false);
+      }
+    }
+
+    elBtnToggleEditMode.addEventListener('click', () => {
+      setEditMode(!isEditMode);
+    });
+
+    elBtnAddKey.addEventListener('click', () => {
+      if (!isEditMode) return;
+      const keyName = prompt('Nhập tên phím cần thêm (VD: F, G, V, B, 5, X):');
+      if (!keyName) return;
+      const keyLabel = prompt('Nhập nhãn mô tả (VD: Nhặt đồ, Kỹ năng, Hồi máu):') || keyName;
+
+      if (!currentKeymap.keys) currentKeymap.keys = [];
+      const newKeyObj = {
+        key: keyName.toUpperCase(),
+        label: keyLabel,
+        x: 0.5,
+        y: 0.5
+      };
+      currentKeymap.keys.push(newKeyObj);
+      renderKeymap();
+    });
+
+    elBtnSaveKeymap.addEventListener('click', async () => {
+      if (!currentKeymap) return;
+      try {
+        await ipcRenderer.invoke('save-current-keymap', currentKeymap);
+        alert('Đã lưu layout phím thành công!');
+      } catch (e) {
+        alert('Lỗi khi lưu layout: ' + e.message);
+      }
+    });
+
+    elBtnResetKeymap.addEventListener('click', async () => {
+      if (!confirm('Bạn có chắc muốn khôi phục layout mặc định cho game này không?')) return;
+      try {
+        currentKeymap = await ipcRenderer.invoke('reset-current-keymap');
+        renderKeymap();
+      } catch (e) {
+        console.error(e);
+      }
+    });
+
+    elBtnCloseOverlay.addEventListener('click', () => {
+      ipcRenderer.invoke('toggle-keymap-overlay', false);
+    });
+
+    // On Load
+    loadLayout();
+  </script>
+</body>
+</html>

@@ -77,6 +77,22 @@ contextBridge.exposeInMainWorld('api', {
   toggleColorAssist: (payload) => ipcRenderer.invoke('toggle-color-assist', payload),
   updateColorAssistConfig: (payload) => ipcRenderer.invoke('update-color-assist-config', payload),
 
+  // 🎮 Native Keymapper & HUD Overlay APIs (Panda-Style Không Cần App Thứ 3)
+  getCurrentKeymap: (gameId) => ipcRenderer.invoke('get-current-keymap', gameId),
+  saveCurrentKeymap: (layout) => ipcRenderer.invoke('save-current-keymap', layout),
+  resetCurrentKeymap: (gameId) => ipcRenderer.invoke('reset-current-keymap', gameId),
+  toggleKeymapOverlay: (enable) => ipcRenderer.invoke('toggle-keymap-overlay', enable),
+  setKeymapOverlayInteractive: (interactive) => ipcRenderer.invoke('set-keymap-overlay-interactive', interactive),
+  injectKeymapKey: (payload) => ipcRenderer.invoke('inject-keymap-key', payload),
+
+  // 📶 1-Click Wireless ADB APIs
+  getDeviceWifiIp: (deviceId) => ipcRenderer.invoke('get-device-wifi-ip', deviceId),
+  connectWirelessAdb: (payload) => ipcRenderer.invoke('connect-wireless-adb', payload),
+
+  // 🎛️ Footstep Booster & 👁️ Digital Vibrance APIs
+  toggleFootstepBooster: (forceState) => ipcRenderer.invoke('toggle-footstep-booster', forceState),
+  toggleDigitalVibrance: (payload) => ipcRenderer.invoke('toggle-digital-vibrance', payload),
+
   // Core Events
   onRequestStartControl: (callback) => ipcRenderer.on('request-start-control', () => callback()),
   onOtgLog: (callback) => ipcRenderer.on('otg-log', (_event, value) => callback(value)),

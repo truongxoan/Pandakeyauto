@@ -1885,6 +1885,191 @@ if (elSelEnemyFilter) {
   });
 }
 
+// ================= 🎮 NATIVE KEYMAPPER DIRECT INJECTION (PANDA-STYLE) =================
+let isKeymapperDirectActive = false;
+const elBtnToggleKeymapperDirect = document.getElementById('btnToggleKeymapperDirect');
+const elLblKeymapperDirectState = document.getElementById('lblKeymapperDirectState');
+const elSelKeymapGame = document.getElementById('selKeymapGame');
+const elBtnOpenKeymapOverlay = document.getElementById('btnOpenKeymapOverlay');
+const elBtnResetKeymapPreset = document.getElementById('btnResetKeymapPreset');
+const elKeymapperStatusChip = document.getElementById('keymapperStatusChip');
+
+function updateKeymapperUI() {
+  if (elBtnToggleKeymapperDirect) {
+    if (isKeymapperDirectActive) elBtnToggleKeymapperDirect.classList.add('active');
+    else elBtnToggleKeymapperDirect.classList.remove('active');
+  }
+  if (elLblKeymapperDirectState) {
+    elLblKeymapperDirectState.textContent = isKeymapperDirectActive ? 'BẬT' : 'TẮT';
+    if (isKeymapperDirectActive) elLblKeymapperDirectState.classList.add('active');
+    else elLblKeymapperDirectState.classList.remove('active');
+  }
+  if (elKeymapperStatusChip) {
+    elKeymapperStatusChip.textContent = isKeymapperDirectActive ? 'Đang kích hoạt' : 'Đã nạp layout';
+    if (isKeymapperDirectActive) elKeymapperStatusChip.classList.add('active');
+    else elKeymapperStatusChip.classList.remove('active');
+  }
+}
+
+if (elBtnToggleKeymapperDirect) {
+  elBtnToggleKeymapperDirect.addEventListener('click', () => {
+    isKeymapperDirectActive = !isKeymapperDirectActive;
+    updateKeymapperUI();
+    updateFooterLog(`🎮 Native Keymapper (Ánh xạ phím trực tiếp): ${isKeymapperDirectActive ? 'ĐÃ BẬT' : 'ĐÃ TẮT'}`);
+    playSoundCue('activate');
+  });
+}
+
+if (elBtnOpenKeymapOverlay) {
+  elBtnOpenKeymapOverlay.addEventListener('click', async () => {
+    if (window.api && window.api.toggleKeymapOverlay) {
+      await window.api.toggleKeymapOverlay(true);
+      updateFooterLog('⌨️ Đã mở cửa sổ Keymap HUD Overlay (Chế độ kéo-thả layout phím)');
+    }
+  });
+}
+
+if (elBtnResetKeymapPreset) {
+  elBtnResetKeymapPreset.addEventListener('click', async () => {
+    const gameId = elSelKeymapGame ? elSelKeymapGame.value : 'freefire';
+    if (window.api && window.api.resetCurrentKeymap) {
+      await window.api.resetCurrentKeymap(gameId);
+      updateFooterLog(`↺ Đã khôi phục layout mặc định cho game: ${gameId.toUpperCase()}`);
+      playSoundCue('activate');
+    }
+  });
+}
+
+// Global Key Listening for Native Keymapper
+window.addEventListener('keydown', (e) => {
+  if (!isKeymapperDirectActive) return;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+  const key = e.key;
+  const gameId = elSelKeymapGame ? elSelKeymapGame.value : 'freefire';
+  if (window.api && window.api.injectKeymapKey) {
+    window.api.injectKeymapKey({ key, gameId });
+  }
+});
+
+// ================= 🎛️ BỘ LỌC BƯỚC CHÂN FPS (FOOTSTEP SOUND BOOSTER) =================
+let isFootstepBoosterActive = false;
+const elBtnToggleFootstepBooster = document.getElementById('btnToggleFootstepBooster');
+const elLblFootstepBoosterState = document.getElementById('lblFootstepBoosterState');
+
+if (elBtnToggleFootstepBooster) {
+  elBtnToggleFootstepBooster.addEventListener('click', async () => {
+    isFootstepBoosterActive = !isFootstepBoosterActive;
+    if (elBtnToggleFootstepBooster) {
+      if (isFootstepBoosterActive) elBtnToggleFootstepBooster.classList.add('active');
+      else elBtnToggleFootstepBooster.classList.remove('active');
+    }
+    if (elLblFootstepBoosterState) {
+      elLblFootstepBoosterState.textContent = isFootstepBoosterActive ? 'BẬT' : 'TẮT';
+      if (isFootstepBoosterActive) elLblFootstepBoosterState.classList.add('active');
+      else elLblFootstepBoosterState.classList.remove('active');
+    }
+    if (window.api && window.api.toggleFootstepBooster) {
+      await window.api.toggleFootstepBooster(isFootstepBoosterActive);
+    }
+    updateFooterLog(`🎛️ Bộ lọc âm thanh bước chân FPS: ${isFootstepBoosterActive ? 'BẬT (250Hz - 2.5kHz)' : 'TẮT'}`);
+    playSoundCue('activate');
+  });
+}
+
+// ================= 👁️ KÍCH MÀU ĐỊCH & NHÌN ĐÊM (DIGITAL VIBRANCE) =================
+let isDigitalVibranceActive = false;
+const elBtnToggleDigitalVibrance = document.getElementById('btnToggleDigitalVibrance');
+const elLblDigitalVibranceState = document.getElementById('lblDigitalVibranceState');
+
+if (elBtnToggleDigitalVibrance) {
+  elBtnToggleDigitalVibrance.addEventListener('click', async () => {
+    isDigitalVibranceActive = !isDigitalVibranceActive;
+    if (elBtnToggleDigitalVibrance) {
+      if (isDigitalVibranceActive) elBtnToggleDigitalVibrance.classList.add('active');
+      else elBtnToggleDigitalVibrance.classList.remove('active');
+    }
+    if (elLblDigitalVibranceState) {
+      elLblDigitalVibranceState.textContent = isDigitalVibranceActive ? 'BẬT' : 'TẮT';
+      if (isDigitalVibranceActive) elLblDigitalVibranceState.classList.add('active');
+      else elLblDigitalVibranceState.classList.remove('active');
+    }
+    if (window.api && window.api.toggleDigitalVibrance) {
+      await window.api.toggleDigitalVibrance({ forceState: isDigitalVibranceActive });
+    }
+    updateFooterLog(`👁️ Chế độ kích màu địch & nhìn đêm (Digital Vibrance): ${isDigitalVibranceActive ? 'BẬT' : 'TẮT'}`);
+    playSoundCue('activate');
+  });
+}
+
+// ================= 📡 1-CLICK WIRELESS ADB (KẾT NỐI KHÔNG DÂY) =================
+const elBtnDetectIp = document.getElementById('btnDetectIp');
+const elTxtWirelessIp = document.getElementById('txtWirelessIp');
+const elTxtWirelessPort = document.getElementById('txtWirelessPort');
+
+async function autoDetectPhoneIp() {
+  if (!window.api || !window.api.getDeviceWifiIp) return;
+  if (elWirelessStatusBadge) elWirelessStatusBadge.textContent = 'Đang dò IP Wi-Fi...';
+  updateFooterLog('🔍 Đang tự động dò tìm địa chỉ IP Wi-Fi của điện thoại qua ADB...');
+
+  try {
+    const res = await window.api.getDeviceWifiIp();
+    if (res && res.success && res.ip) {
+      if (elTxtWirelessIp) elTxtWirelessIp.value = res.ip;
+      if (elWirelessStatusBadge) elWirelessStatusBadge.textContent = `Tìm thấy IP: ${res.ip}`;
+      updateFooterLog(`✅ Đã tìm thấy IP Wi-Fi điện thoại: ${res.ip}`);
+    } else {
+      if (elWirelessStatusBadge) elWirelessStatusBadge.textContent = 'Chưa tìm thấy IP Wi-Fi';
+      updateFooterLog(res.message || 'Chưa tìm thấy IP Wi-Fi điện thoại');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+if (elBtnDetectIp) {
+  elBtnDetectIp.addEventListener('click', autoDetectPhoneIp);
+}
+
+if (elBtnActivateWirelessAdb) {
+  elBtnActivateWirelessAdb.addEventListener('click', async () => {
+    let ip = elTxtWirelessIp ? elTxtWirelessIp.value.trim() : '';
+    const port = parseInt(elTxtWirelessPort ? elTxtWirelessPort.value : 5555) || 5555;
+
+    if (!ip) {
+      await autoDetectPhoneIp();
+      ip = elTxtWirelessIp ? elTxtWirelessIp.value.trim() : '';
+    }
+
+    if (!ip) {
+      alert('Vui lòng nhập địa chỉ IP Wi-Fi của điện thoại (VD: 192.168.1.50) hoặc đảm bảo điện thoại đã kết nối Wi-Fi.');
+      return;
+    }
+
+    if (elWirelessStatusBadge) elWirelessStatusBadge.textContent = 'Đang kết nối không dây...';
+    updateFooterLog(`📶 Đang kết nối không dây tới: ${ip}:${port}...`);
+
+    try {
+      const res = await window.api.connectWirelessAdb({ ip, port });
+      if (res && res.success) {
+        if (elWirelessStatusBadge) {
+          elWirelessStatusBadge.textContent = `Đã kết nối Wi-Fi: ${ip}`;
+          elWirelessStatusBadge.classList.add('active');
+        }
+        updateFooterLog(res.message);
+        alert(`Kết nối không dây thành công!\n\nĐịa chỉ: ${ip}:${port}\nBây giờ bạn có thể rút cáp USB và chơi game thoải mái!`);
+        playSoundCue('activate');
+        updateDeviceList();
+      } else {
+        if (elWirelessStatusBadge) elWirelessStatusBadge.textContent = 'Lỗi kết nối';
+        alert(`Không thể kết nối không dây: ${res.message || 'Lỗi không xác định'}`);
+      }
+    } catch (e) {
+      alert(`Lỗi: ${e.message}`);
+    }
+  });
+}
+
 // ================= KHỞI CHẠY LẦN ĐẦU =================
 window.addEventListener('DOMContentLoaded', () => {
   loadProfiles();

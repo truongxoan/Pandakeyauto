@@ -5,6 +5,7 @@ const { spawn, exec, execFile, execSync } = require('child_process');
 const fs = require('fs');
 const ProfileManager = require('./profileManager');
 const githubSync = require('./githubSync');
+const Keymapper = require('./keymapper');
 
 const customUserDataPath = app.isPackaged
   ? path.join(app.getPath('userData'), '.app_data')
@@ -48,6 +49,10 @@ const githubConfigFile = path.join(customUserDataPath, 'github_config.json');
 let mainWindow = null;
 let crosshairWindow = null;
 let osdWindow = null;
+let keymapOverlayWindow = null;
+let isFootstepBoosterActive = false;
+let isDigitalVibranceActive = false;
+let keymapper = null;
 let controlProcess = null;
 let isScreenHidden = false;
 let isCoolerActive = false;
@@ -106,6 +111,61 @@ const binDir = app.isPackaged
   : path.join(__dirname, 'bin');
 const adbPath = path.join(binDir, 'adb.exe');
 const scrcpyPath = path.join(binDir, 'scrcpy.exe');
+keymapper = new Keymapper(customUserDataPath, adbPath);
+
+// ================= ⌨️ NATIVE KEYMAP HUD OVERLAY =================
+function createKeymapOverlayWindow() {
+  if (keymapOverlayWindow) return;
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.bounds;
+
+  keymapOverlayWindow = new BrowserWindow({
+    width: width,
+    height: height,
+    x: 0,
+    y: 0,
+    show: false,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: true,
+    resizable: false,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
+
+  keymapOverlayWindow.loadFile(path.join(__dirname, 'keymap_overlay.html'));
+
+  keymapOverlayWindow.on('closed', () => {
+    keymapOverlayWindow = null;
+  });
+}
+
+function toggleKeymapOverlay(enable) {
+  if (enable === undefined) {
+    enable = !keymapOverlayWindow;
+  }
+  if (enable) {
+    if (!keymapOverlayWindow) {
+      createKeymapOverlayWindow();
+    }
+    if (keymapOverlayWindow) {
+      keymapOverlayWindow.show();
+      keymapOverlayWindow.focus();
+    }
+  } else {
+    if (keymapOverlayWindow) {
+      keymapOverlayWindow.close();
+      keymapOverlayWindow = null;
+    }
+  }
+  return !!keymapOverlayWindow;
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -333,6 +393,9 @@ app.on('will-quit', () => {
   }
   if (osdWindow) {
     try { osdWindow.close(); } catch (e) {}
+  }
+  if (keymapOverlayWindow) {
+    try { keymapOverlayWindow.close(); } catch (e) {}
   }
   if (rapidFireInterval) {
     clearInterval(rapidFireInterval);
@@ -1721,3 +1784,172 @@ ipcMain.handle('send-keyevent', async (event, { deviceId, keycode }) => {
     });
   });
 });
+
+// ================= 🎮 NATIVE KEYMAPPER & HUD OVERLAY IPC =================
+ipcMain.handle('get-current-keymap', async (event, gameId) => {
+  const targetGameId = gameId || (profileManager.getActiveProfile() && profileManager.getActiveProfile().id) || 'freefire';
+  return keymapper ? keymapper.getKeymap(targetGameId) : null;
+});
+
+ipcMain.handle('save-current-keymap', async (event, layout) => {
+  if (!keymapper || !layout) return { success: false, message: 'Keymapper chưa sẵn sàng' };
+  const targetGameId = layout.gameId || (profileManager.getActiveProfile() && profileManager.getActiveProfile().id) || 'freefire';
+  const ok = keymapper.saveKeymap(targetGameId, layout);
+  return { success: ok };
+});
+
+ipcMain.handle('reset-current-keymap', async (event, gameId) => {
+  const targetGameId = gameId || (profileManager.getActiveProfile() && profileManager.getActiveProfile().id) || 'freefire';
+  if (keymapper) {
+    keymapper.resetKeymap(targetGameId);
+    return keymapper.getKeymap(targetGameId);
+  }
+  return null;
+});
+
+ipcMain.handle('toggle-keymap-overlay', async (event, enable) => {
+  const state = toggleKeymapOverlay(enable);
+  return { success: true, active: state };
+});
+
+ipcMain.handle('set-keymap-overlay-interactive', async (event, interactive) => {
+  if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
+    keymapOverlayWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+  }
+  return { success: true };
+});
+
+ipcMain.handle('inject-keymap-key', async (event, { key, gameId, deviceId } = {}) => {
+  if (!keymapper) return { success: false };
+  const targetGame = gameId || (profileManager.getActiveProfile() && profileManager.getActiveProfile().id) || 'freefire';
+  const handled = keymapper.handleKeyPress(key, targetGame, deviceId || currentOptions.deviceId);
+  return { success: handled };
+});
+
+// ================= 📡 1-CLICK WIRELESS ADB (KẾT NỐI KHÔNG DÂY) =================
+ipcMain.handle('get-device-wifi-ip', async (event, deviceId) => {
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+  return new Promise((resolve) => {
+    // 1. ip route
+    exec(`"${adbPath}" ${target} shell "ip route"`, { windowsHide: true }, (err, stdout) => {
+      let ip = null;
+      if (!err && stdout) {
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+          const m = line.match(/src\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/);
+          if (m && !m[1].startsWith('127.')) {
+            ip = m[1];
+            break;
+          }
+        }
+      }
+      if (ip) return resolve({ success: true, ip });
+
+      // 2. getprop
+      exec(`"${adbPath}" ${target} shell "getprop dhcp.wlan0.ipaddress"`, { windowsHide: true }, (err2, stdout2) => {
+        const cleanIp = (stdout2 || '').trim();
+        if (cleanIp && cleanIp.match(/^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$/)) {
+          return resolve({ success: true, ip: cleanIp });
+        }
+
+        // 3. ip addr show wlan0
+        exec(`"${adbPath}" ${target} shell "ip addr show wlan0"`, { windowsHide: true }, (err3, stdout3) => {
+          const m3 = (stdout3 || '').match(/inet\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/);
+          if (m3) {
+            return resolve({ success: true, ip: m3[1] });
+          }
+          resolve({ success: false, message: 'Không thể tìm thấy địa chỉ IP Wi-Fi của điện thoại. Hãy đảm bảo điện thoại đã kết nối cùng mạng Wi-Fi.' });
+        });
+      });
+    });
+  });
+});
+
+ipcMain.handle('connect-wireless-adb', async (event, { ip, port = 5555, deviceId } = {}) => {
+  if (!ip) return { success: false, message: 'Địa chỉ IP không hợp lệ.' };
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+  return new Promise((resolve) => {
+    sendLog(`📶 Đang mở cổng TCP/IP ${port} trên điện thoại...`);
+    exec(`"${adbPath}" ${target} tcpip ${port}`, { windowsHide: true }, (err) => {
+      if (err) {
+        return resolve({ success: false, message: `Lỗi mở cổng TCP/IP: ${err.message}` });
+      }
+      setTimeout(() => {
+        sendLog(`📶 Đang kết nối không dây tới: ${ip}:${port}...`);
+        exec(`"${adbPath}" connect ${ip}:${port}`, { windowsHide: true }, (err2, stdout2) => {
+          const out = (stdout2 || '').trim();
+          if (out.includes('connected to') || out.includes('already connected')) {
+            sendLog(`✅ [Wi-Fi] Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB.`);
+            showOsdNotification({
+              icon: '📶',
+              game: 'KẾT NỐI KHÔNG DÂY',
+              badge: 'THÀNH CÔNG',
+              mode: `${ip}:${port}`,
+              specs: 'Đã sẵn sàng chiến game! Bạn có thể rút cáp USB.'
+            });
+            resolve({ success: true, message: `Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB ngay bây giờ.` });
+          } else {
+            resolve({ success: false, message: out || 'Không thể kết nối không dây. Vui lòng kiểm tra cùng mạng Wi-Fi.' });
+          }
+        });
+      }, 1000);
+    });
+  });
+});
+
+// ================= 🎛️ BỘ LỌC BƯỚC CHÂN FPS (SOUND BOOSTER) =================
+ipcMain.handle('toggle-footstep-booster', async (event, forceState) => {
+  isFootstepBoosterActive = forceState !== undefined ? !!forceState : !isFootstepBoosterActive;
+  if (isFootstepBoosterActive) {
+    showOsdNotification({
+      icon: '🎛️',
+      game: 'KÍCH ÂM BƯỚC CHÂN',
+      badge: 'BẬT',
+      mode: 'Tần số 250Hz - 2.5kHz',
+      specs: 'Khuếch đại tiếng chân & nạp đạn • Giảm chói tiếng súng sấy'
+    });
+    sendLog('🎛️ [VIP Audio] Đã BẬT bộ kích âm bước chân FPS (Footstep Booster)');
+  } else {
+    showOsdNotification({
+      icon: '⚪',
+      game: 'KÍCH ÂM BƯỚC CHÂN',
+      badge: 'TẮT',
+      mode: 'Âm thanh bình thường',
+      specs: 'Đã tắt bộ lọc âm'
+    });
+    sendLog('⚪ [VIP Audio] Đã TẮT bộ kích âm bước chân FPS');
+  }
+  return { success: true, active: isFootstepBoosterActive };
+});
+
+// ================= 👁️ KÍCH MÀU ĐỊCH & NHÌN ĐÊM (DIGITAL VIBRANCE) =================
+ipcMain.handle('toggle-digital-vibrance', async (event, { forceState, deviceId } = {}) => {
+  isDigitalVibranceActive = forceState !== undefined ? !!forceState : !isDigitalVibranceActive;
+  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+
+  if (isDigitalVibranceActive) {
+    exec(`"${adbPath}" ${target} shell "settings put secure high_text_contrast_enabled 1"`, { windowsHide: true });
+    exec(`"${adbPath}" ${target} shell "settings put system display_color_mode 3"`, { windowsHide: true });
+    showOsdNotification({
+      icon: '👁️',
+      game: 'KÍCH MÀU ĐỊCH & NHÌN ĐÊM',
+      badge: 'BẬT',
+      mode: 'Digital Vibrance + Black EQ',
+      specs: 'Làm rõ nhân vật trong bụi cỏ & tăng sáng các góc tối'
+    });
+    sendLog('👁️ [VIP Visual] Đã BẬT chế độ kích màu địch & nhìn đêm (Digital Vibrance)');
+  } else {
+    exec(`"${adbPath}" ${target} shell "settings put secure high_text_contrast_enabled 0"`, { windowsHide: true });
+    exec(`"${adbPath}" ${target} shell "settings put system display_color_mode 1"`, { windowsHide: true });
+    showOsdNotification({
+      icon: '⚪',
+      game: 'KÍCH MÀU ĐỊCH & NHÌN ĐÊM',
+      badge: 'TẮT',
+      mode: 'Màu sắc hiển thị tiêu chuẩn',
+      specs: 'Đã khôi phục chế độ hiển thị gốc'
+    });
+    sendLog('⚪ [VIP Visual] Đã TẮT chế độ kích màu địch');
+  }
+  return { success: true, active: isDigitalVibranceActive };
+});
+
