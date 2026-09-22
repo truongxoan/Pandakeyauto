@@ -1093,6 +1093,23 @@ if (elBtnToggleOrb) {
 
 if (elMiniOrbView) {
   elMiniOrbView.addEventListener('click', handleToggleOrb);
+  elMiniOrbView.addEventListener('dblclick', handleToggleOrb);
+}
+
+const elOrbCore = document.querySelector('.orb-core');
+if (elOrbCore) {
+  elOrbCore.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleToggleOrb();
+  });
+  elOrbCore.addEventListener('dblclick', (e) => {
+    e.stopPropagation();
+    handleToggleOrb();
+  });
+}
+
+if (window.api && window.api.onToggleOrb) {
+  window.api.onToggleOrb(() => handleToggleOrb());
 }
 
 if (elBtnMinWindow) {

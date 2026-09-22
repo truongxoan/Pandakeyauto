@@ -139,5 +139,6 @@ contextBridge.exposeInMainWorld('api', {
   onQuickSniperToggled: (callback) => ipcRenderer.on('quick-sniper-toggled-global', (_event, value) => callback(value)),
   onScreenshotCaptured: (callback) => ipcRenderer.on('screenshot-captured', (_event, value) => callback(value)),
   onGameAutoDetected: (callback) => ipcRenderer.on('game-auto-detected', (_event, value) => callback(value)),
-  onHardwareStats: (callback) => ipcRenderer.on('hardware-stats', (_event, value) => callback(value))
+  onHardwareStats: (callback) => ipcRenderer.on('hardware-stats', (_event, value) => callback(value)),
+  onToggleOrb: (callback) => ipcRenderer.on('trigger-toggle-orb', () => callback())
 });

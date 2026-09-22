@@ -213,6 +213,17 @@ function createWindow() {
     });
   } catch (e) {}
 
+  // 5. Phím tắt Ctrl+Alt+O: Bật/Tắt thu nhỏ Quả Cầu Nổi (Orb Mode)
+  try {
+    globalShortcut.register('CommandOrControl+Alt+O', () => {
+      try {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('trigger-toggle-orb');
+        }
+      } catch (e) {}
+    });
+  } catch (e) {}
+
 
   // 6. Phím tắt F10 & Alt+T toàn cục: Dịch Màn Hình Game Thời Gian Thực (In-Game Screen Translator)
   try {
