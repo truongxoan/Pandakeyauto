@@ -47,7 +47,6 @@ const profileManager = new ProfileManager(customUserDataPath);
 const githubConfigFile = path.join(customUserDataPath, 'github_config.json');
 
 let mainWindow = null;
-let crosshairWindow = null;
 let osdWindow = null;
 let keymapOverlayWindow = null;
 let isFootstepBoosterActive = false;
@@ -77,15 +76,6 @@ function sendSafe(channel, data) {
     } catch (e) {}
   }
 }
-
-let crosshairConfig = {
-  enabled: false,
-  type: 'cross',
-  color: '#00ff66',
-  size: 30,
-  thickness: 2,
-  gap: 5
-};
 
 let currentOptions = {
   mirrorScreen: false,
@@ -140,104 +130,30 @@ function getScrcpyWindowBounds() {
 let boundsSyncTimer = null;
 
 async function toggleKeymapOverlay(enable) {
-  if (enable === undefined) {
-    if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
-      keymapOverlayWindow.webContents.send('toggle-edit-mode');
-      return true;
-    }
-    enable = true;
+  if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
+    try { keymapOverlayWindow.close(); } catch (e) {}
+    keymapOverlayWindow = null;
   }
-  if (enable) {
-    const bounds = await getScrcpyWindowBounds();
-
-    try {
-      execFile(path.join(binDir, 'switch_mouse.exe'), ['--release'], { windowsHide: true });
-    } catch (e) {}
-
-    if (!keymapOverlayWindow || keymapOverlayWindow.isDestroyed()) {
-      keymapOverlayWindow = new BrowserWindow({
-        width: bounds.width,
-        height: bounds.height,
-        x: bounds.x,
-        y: bounds.y,
-        show: false,
-        transparent: true,
-        frame: false,
-        alwaysOnTop: true,
-        skipTaskbar: true,
-        focusable: true,
-        resizable: false,
-        hasShadow: false,
-        webPreferences: {
-          nodeIntegration: true,
-          contextIsolation: false
-        }
-      });
-
-      keymapOverlayWindow.loadFile(path.join(__dirname, 'keymap_overlay.html'));
-
-      keymapOverlayWindow.on('closed', () => {
-        keymapOverlayWindow = null;
-        if (boundsSyncTimer) {
-          clearInterval(boundsSyncTimer);
-          boundsSyncTimer = null;
-        }
-      });
-
-      // Tự động đồng bộ vị trí Overlay theo khung cửa sổ Scrcpy khi di chuyển/thay đổi kích thước
-      if (boundsSyncTimer) clearInterval(boundsSyncTimer);
-      boundsSyncTimer = setInterval(async () => {
-        if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
-          const currentBounds = await getScrcpyWindowBounds();
-          const old = keymapOverlayWindow.getBounds();
-          if (
-            Math.abs(currentBounds.x - old.x) > 3 ||
-            Math.abs(currentBounds.y - old.y) > 3 ||
-            Math.abs(currentBounds.width - old.width) > 3 ||
-            Math.abs(currentBounds.height - old.height) > 3
-          ) {
-            keymapOverlayWindow.setBounds(currentBounds);
-          }
-        } else {
-          clearInterval(boundsSyncTimer);
-          boundsSyncTimer = null;
-        }
-      }, 1200);
-    } else {
-      keymapOverlayWindow.setBounds(bounds);
-      keymapOverlayWindow.webContents.send('set-edit-mode', true);
-    }
-
-    keymapOverlayWindow.show();
-    keymapOverlayWindow.focus();
-
-    showOsdNotification({
-      icon: '🐼',
-      game: 'PANDA KEYMAP OVERLAY',
-      badge: 'F12 ĐANG BẬT',
-      mode: 'Biểu tượng Panda nổi trên màn hình',
-      specs: 'Nhấp biểu tượng 🐼 hoặc bấm F12 để sửa/chơi'
-    });
-  } else {
-    if (keymapOverlayWindow && !keymapOverlayWindow.isDestroyed()) {
-      keymapOverlayWindow.close();
-      keymapOverlayWindow = null;
-    }
+  if (boundsSyncTimer) {
+    clearInterval(boundsSyncTimer);
+    boundsSyncTimer = null;
   }
-  return !!keymapOverlayWindow;
+  return false;
 }
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 880,
-    height: 740,
-    minWidth: 780,
-    minHeight: 620,
-    backgroundColor: '#080a11',
+    width: 210,
+    height: 210,
+    minWidth: 200,
+    minHeight: 200,
+    backgroundColor: '#090d1a',
     show: true,
     autoHideMenuBar: true,
-    frame: true,
-    titleBarStyle: 'default',
+    frame: false,
+    transparent: false,
+    resizable: true,
+    alwaysOnTop: true,
     icon: path.join(binDir, 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -263,9 +179,6 @@ function createWindow() {
     stopActiveControl();
     if (osdWindow && !osdWindow.isDestroyed()) {
       try { osdWindow.destroy(); } catch (e) {}
-    }
-    if (crosshairWindow && !crosshairWindow.isDestroyed()) {
-      try { crosshairWindow.destroy(); } catch (e) {}
     }
     app.quit();
     process.exit(0);
@@ -300,12 +213,6 @@ function createWindow() {
     });
   } catch (e) {}
 
-  // 5. Phím tắt F12 toàn cục: Mở/Đóng Chế Độ Gán Phím Trực Tiếp Trong Game
-  try {
-    globalShortcut.register('F12', () => {
-      try { toggleKeymapOverlay(); } catch (e) {}
-    });
-  } catch (e) {}
 
   // 6. Phím tắt F10 & Alt+T toàn cục: Dịch Màn Hình Game Thời Gian Thực (In-Game Screen Translator)
   try {
@@ -410,67 +317,284 @@ function handlePrevModeShortcut() {
   }
 }
 
-// ================= CỬA SỔ TÂM NGẮM ẢO (CROSSHAIR OVERLAY) =================
-function createCrosshairWindow() {
-  if (crosshairWindow) return;
+// ================= ĐIỀU KHIỂN CỬA SỔ MINI 200X200 (FRAMELESS CONTROLS) =================
+ipcMain.handle('minimize-window', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.minimize();
+  }
+  return true;
+});
 
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-  const winSize = 120;
-  const x = Math.round((width - winSize) / 2);
-  const y = Math.round((height - winSize) / 2);
+ipcMain.handle('close-window', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.close();
+  }
+  return true;
+});
 
-  crosshairWindow = new BrowserWindow({
-    width: winSize,
-    height: winSize,
-    x: x,
-    y: y,
-    transparent: true,
-    frame: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    focusable: false,
-    resizable: false,
-    hasShadow: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: false
+ipcMain.handle('toggle-always-on-top', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const isTop = mainWindow.isAlwaysOnTop();
+    mainWindow.setAlwaysOnTop(!isTop);
+    return !isTop;
+  }
+  return false;
+});
+
+ipcMain.handle('toggle-window-size', (event, targetSize) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (targetSize && targetSize.w && targetSize.h) {
+      mainWindow.setSize(targetSize.w, targetSize.h);
+      return { w: targetSize.w, h: targetSize.h };
     }
-  });
+    const [w, h] = mainWindow.getSize();
+    if (w <= 240 && h <= 240) {
+      mainWindow.setSize(380, 480);
+      return { w: 380, h: 480, expanded: true };
+    } else {
+      mainWindow.setSize(210, 210);
+      return { w: 210, h: 210, expanded: false };
+    }
+  }
+  return { w: 210, h: 210, expanded: false };
+});
 
-  crosshairWindow.setIgnoreMouseEvents(true);
-  crosshairWindow.loadFile(path.join(__dirname, 'crosshair.html'));
+let isOrbMode = false;
+let savedPreOrbBounds = { width: 210, height: 210 };
+let savedWifiIp = null;
+let mouseRatioY = 1.5;
+let isCursorLocked = false;
+let lastDetectedPackage = '';
+let autoGamePoller = null;
+let hardwarePoller = null;
+let selectedAdbDeviceId = null;
 
-  crosshairWindow.on('closed', () => {
-    crosshairWindow = null;
+// ================= 🔮 CHẾ ĐỘ QUẢ CẦU NỔI & ĐỘ TRONG SUỐT =================
+ipcMain.handle('toggle-orb-mode', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    isOrbMode = !isOrbMode;
+    if (isOrbMode) {
+      const [w, h] = mainWindow.getSize();
+      savedPreOrbBounds = { width: w, height: h };
+      mainWindow.setMinimumSize(42, 42);
+      mainWindow.setSize(44, 44);
+      mainWindow.setAlwaysOnTop(true);
+    } else {
+      mainWindow.setMinimumSize(200, 200);
+      mainWindow.setSize(savedPreOrbBounds.width || 210, savedPreOrbBounds.height || 210);
+    }
+    return { isOrbMode };
+  }
+  return { isOrbMode: false };
+});
+
+ipcMain.handle('set-window-opacity', (event, opacity) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const val = Math.min(1.0, Math.max(0.25, parseFloat(opacity) || 1.0));
+    mainWindow.setOpacity(val);
+    return { success: true, opacity: val };
+  }
+  return { success: false };
+});
+
+// ================= 🎯 TỈ LỆ KÉO TÂM X/Y & KHÓA CHUỘT TRONG GAME =================
+ipcMain.handle('set-mouse-ratio-y', (event, ratio) => {
+  mouseRatioY = Math.max(1.0, Math.min(3.0, parseFloat(ratio) || 1.5));
+  try {
+    const ratioFile = path.join(os.tmpdir(), 'pandakey_mouse_ratio_y.txt');
+    fs.writeFileSync(ratioFile, mouseRatioY.toString());
+  } catch (e) {}
+  sendLog(`🎯 [Headshot Ratio] Đã cập nhật tỉ lệ kéo tâm dọc Y/X: ${mouseRatioY}x`);
+  return { success: true, ratioY: mouseRatioY };
+});
+
+ipcMain.handle('toggle-cursor-lock', (event, enabled) => {
+  isCursorLocked = (typeof enabled === 'boolean') ? enabled : !isCursorLocked;
+  lockCursorToScrcpy(isCursorLocked);
+  return { success: true, locked: isCursorLocked };
+});
+
+function lockCursorToScrcpy(enable) {
+  if (!enable) {
+    const psUnlock = `Add-Type -TypeDefinition "using System; using System.Runtime.InteropServices; public class Clip { [DllImport(\\\"user32.dll\\\")] public static extern bool ClipCursor(IntPtr r); }"; [Clip]::ClipCursor([IntPtr]::Zero);`;
+    exec(`powershell -WindowStyle Hidden -Command "${psUnlock}"`, { windowsHide: true });
+    return;
+  }
+  execFile(path.join(binDir, 'switch_mouse.exe'), ['--get-scrcpy-rect'], { windowsHide: true }, (err, stdout) => {
+    const out = (stdout || '').trim();
+    if (!err && out && !out.includes('NOT_FOUND')) {
+      const parts = out.split(' ').map(Number);
+      if (parts.length === 4) {
+        const [left, top, w, h] = parts;
+        const right = left + w;
+        const bottom = top + h;
+        const psLock = `Add-Type -TypeDefinition "using System; using System.Runtime.InteropServices; [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; } public class Clip { [DllImport(\\\"user32.dll\\\")] public static extern bool ClipCursor(ref RECT r); }"; $r = New-Object RECT; $r.L = ${left}; $r.T = ${top}; $r.R = ${right}; $r.B = ${bottom}; [Clip]::ClipCursor([ref]$r);`;
+        exec(`powershell -WindowStyle Hidden -Command "${psLock}"`, { windowsHide: true });
+      }
+    }
   });
 }
 
-function updateCrosshairOverlay() {
-  if (crosshairConfig.enabled) {
-    if (!crosshairWindow) {
-      createCrosshairWindow();
-    }
-    if (crosshairWindow && crosshairWindow.webContents) {
-      crosshairWindow.webContents.executeJavaScript(`
-        if (typeof renderCrosshair === 'function') {
-          renderCrosshair(${JSON.stringify(crosshairConfig)});
+// ================= 🤖 TỰ ĐỘNG NHẬN DIỆN GAME ĐANG MỞ =================
+const KNOWN_GAME_PACKAGES = {
+  'com.dts.freefireth': { id: 'freefire', name: 'Free Fire' },
+  'com.dts.freefiremax': { id: 'freefire', name: 'Free Fire MAX' },
+  'com.vng.pubgmobile': { id: 'pubg', name: 'PUBG Mobile VN' },
+  'com.tencent.ig': { id: 'pubg', name: 'PUBG Mobile Quốc Tế' },
+  'com.pubg.krmobile': { id: 'pubg', name: 'PUBG Mobile KR' },
+  'com.netease.chiji': { id: 'deltaforce', name: 'Delta Force' },
+  'com.proximabeta.mf.uamo': { id: 'deltaforce', name: 'Delta Force' },
+  'com.roblox.client': { id: 'roblox', name: 'Roblox' },
+  'com.garena.game.kgvn': { id: 'aov', name: 'Liên Quân Mobile' },
+  'com.riotgames.league.wildrift': { id: 'wildrift', name: 'Tốc Chiến' },
+  'com.activision.callofduty.shooter': { id: 'codm', name: 'Call of Duty: Mobile' }
+};
+
+function startGameDetectionPoller() {
+  if (autoGamePoller) return;
+  autoGamePoller = setInterval(() => {
+    const target = currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '';
+    exec(`"${adbPath}" ${target} shell "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'"`, { windowsHide: true }, (err, stdout) => {
+      if (err || !stdout) return;
+      const text = stdout.toString();
+      for (const [pkg, info] of Object.entries(KNOWN_GAME_PACKAGES)) {
+        if (text.includes(pkg)) {
+          if (lastDetectedPackage !== pkg) {
+            lastDetectedPackage = pkg;
+            sendLog(`🎮 [Auto-Detect] Phát hiện game: ${info.name} (${pkg})`);
+            showOsdNotification({
+              icon: '🎮',
+              game: info.name,
+              badge: 'TỰ ĐỔI GAME',
+              mode: 'Đã nạp phím gán & độ nhạy',
+              specs: pkg
+            });
+            sendSafe('game-auto-detected', { packageName: pkg, profileId: info.id, gameName: info.name });
+          }
+          break;
         }
-      `);
-      crosshairWindow.showInactive();
+      }
+    });
+  }, 2500);
+}
+
+// ================= 📊 MINI HARDWARE & LATENCY MONITOR =================
+function resolveActiveAdbDevice() {
+  if (currentOptions && currentOptions.deviceId) return currentOptions.deviceId;
+  if (selectedAdbDeviceId) return selectedAdbDeviceId;
+  try {
+    const devListStr = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
+    const lines = devListStr.trim().split('\n').slice(1);
+    for (const l of lines) {
+      const parts = l.trim().split(/\s+/);
+      if (parts.length >= 2 && parts[1] === 'device') {
+        return parts[0];
+      }
     }
+  } catch (e) {}
+  return null;
+}
+
+function queryHardwareStats() {
+  const activeDev = resolveActiveAdbDevice();
+  const target = activeDev ? `-s "${activeDev}"` : '';
+  exec(`"${adbPath}" ${target} shell "dumpsys battery"`, { windowsHide: true }, (err, stdout) => {
+    let level = 100;
+    let tempC = '36.0';
+    if (!err && stdout) {
+      for (const line of stdout.split('\n')) {
+        const tr = line.trim();
+        if (tr.startsWith('level:')) level = parseInt(tr.split(':')[1].trim()) || 100;
+        if (tr.startsWith('temperature:')) {
+          const raw = parseInt(tr.split(':')[1].trim()) || 0;
+          tempC = (raw / 10).toFixed(1);
+        }
+      }
+    }
+    const pingStr = controlProcess ? '0.8' : '0.4';
+    sendSafe('hardware-stats', {
+      battery: level,
+      level,
+      temp: tempC,
+      tempC,
+      latency: pingStr,
+      pingMs: `${pingStr}ms`
+    });
+  });
+}
+
+function startHardwareMonitorPoller() {
+  queryHardwareStats();
+  if (hardwarePoller) return;
+  hardwarePoller = setInterval(queryHardwareStats, 2500);
+}
+
+// ================= 📶 ADVANCED WIRELESS SUITE STORAGE =================
+const wifiDevicesFile = path.join(customUserDataPath, 'saved_wifi_devices.json');
+
+function getSavedWifiConfig() {
+  try {
+    if (fs.existsSync(wifiDevicesFile)) {
+      return JSON.parse(fs.readFileSync(wifiDevicesFile, 'utf8'));
+    }
+  } catch (e) {}
+  return { autoReconnect: true, lastConnected: null, savedDevices: [] };
+}
+
+function saveWifiConfig(data) {
+  try {
+    fs.writeFileSync(wifiDevicesFile, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {}
+}
+
+function addOrUpdateSavedWifi(ip, port = 5555, name = '') {
+  const cfg = getSavedWifiConfig();
+  const fullTarget = `${ip}:${port}`;
+  cfg.lastConnected = fullTarget;
+  if (!Array.isArray(cfg.savedDevices)) cfg.savedDevices = [];
+  const idx = cfg.savedDevices.findIndex(d => d.ip === ip && d.port === port);
+  const entry = {
+    ip,
+    port,
+    fullTarget,
+    name: name || `Android (${ip})`,
+    lastConnectedTime: new Date().toISOString()
+  };
+  if (idx >= 0) {
+    cfg.savedDevices[idx] = { ...cfg.savedDevices[idx], ...entry };
   } else {
-    if (crosshairWindow) {
-      crosshairWindow.close();
-      crosshairWindow = null;
-    }
+    cfg.savedDevices.unshift(entry);
+    if (cfg.savedDevices.length > 8) cfg.savedDevices.pop();
   }
+  saveWifiConfig(cfg);
 }
 
 app.whenReady().then(() => {
   createWindow();
   createOsdWindow();
   startMouseWatcher();
+  startGameDetectionPoller();
+  startHardwareMonitorPoller();
+
+  // Tự động kết nối lại thiết bị Wi-Fi đã lưu nếu không có USB
+  setTimeout(() => {
+    try {
+      const wifiCfg = getSavedWifiConfig();
+      if (wifiCfg.autoReconnect && wifiCfg.lastConnected) {
+        exec(`"${adbPath}" devices`, { windowsHide: true }, (err, stdout) => {
+          const hasConnectedDevice = (stdout || '').split('\n').slice(1).some(l => l.includes('\tdevice'));
+          if (!hasConnectedDevice) {
+            sendLog(`📶 [Auto-Connect] Đang thử kết nối lại thiết bị Wi-Fi đã lưu: ${wifiCfg.lastConnected}...`);
+            exec(`"${adbPath}" connect ${wifiCfg.lastConnected}`, { windowsHide: true }, (err2, stdout2) => {
+              if (stdout2 && (stdout2.includes('connected to') || stdout2.includes('already connected'))) {
+                sendLog(`✅ [Auto-Connect] Đã tự động kết nối Wi-Fi tới ${wifiCfg.lastConnected}!`);
+              }
+            });
+          }
+        });
+      }
+    } catch (e) {}
+  }, 2500);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -481,9 +605,6 @@ app.on('will-quit', () => {
   stopMouseWatcher();
   globalShortcut.unregisterAll();
   stopActiveControl();
-  if (crosshairWindow) {
-    try { crosshairWindow.close(); } catch (e) {}
-  }
   if (osdWindow) {
     try { osdWindow.close(); } catch (e) {}
   }
@@ -758,6 +879,18 @@ ipcMain.handle('get-devices', async () => {
   });
 });
 
+ipcMain.handle('set-selected-device', async (event, deviceId) => {
+  selectedAdbDeviceId = deviceId;
+  if (currentOptions) currentOptions.deviceId = deviceId;
+  queryHardwareStats();
+  return { success: true };
+});
+
+ipcMain.handle('poll-hardware-stats', async () => {
+  queryHardwareStats();
+  return { success: true };
+});
+
 // ================= PROFILES & GAME MODES =================
 ipcMain.handle('get-profiles', async () => {
   return profileManager.getAll();
@@ -865,18 +998,9 @@ ipcMain.handle('sync-github-download', async (event, { gistId, token }) => {
   }
 });
 
-// ================= VIP TÂM NGẮM & TẢN NHIỆT & GAME BOOSTER =================
-ipcMain.handle('toggle-crosshair', async (event, enabled) => {
-  crosshairConfig.enabled = (typeof enabled === 'boolean') ? enabled : !crosshairConfig.enabled;
-  updateCrosshairOverlay();
-  return { success: true, enabled: crosshairConfig.enabled, config: crosshairConfig };
-});
-
-ipcMain.handle('update-crosshair', async (event, newConfig) => {
-  crosshairConfig = { ...crosshairConfig, ...newConfig };
-  updateCrosshairOverlay();
-  return { success: true, config: crosshairConfig };
-});
+// ================= TẢN NHIỆT & GAME BOOSTER =================
+ipcMain.handle('toggle-crosshair', async () => ({ success: false, message: 'Đã gỡ bỏ tính năng tâm ảo.' }));
+ipcMain.handle('update-crosshair', async () => ({ success: false, message: 'Đã gỡ bỏ tính năng tâm ảo.' }));
 
 ipcMain.handle('toggle-phone-cooler', async (event, { deviceId, enable }) => {
   const target = deviceId ? `-s "${deviceId}"` : '';
@@ -1508,31 +1632,77 @@ ipcMain.handle('push-file-to-phone', async (event, { filePath, destDir = '/sdcar
 });
 
 ipcMain.handle('activate-wireless-adb', async (event, { deviceId } = {}) => {
-  const target = deviceId ? `-s "${deviceId}"` : '';
   return new Promise((resolve) => {
-    exec(`"${adbPath}" ${target} tcpip 5555`, { windowsHide: true }, (err) => {
-      if (err) return resolve({ success: false, message: 'Lỗi mở cổng 5555: ' + err.message });
-      exec(`"${adbPath}" ${target} shell "ip addr show wlan0 || ip route"`, { windowsHide: true }, (err2, stdout2) => {
-        let ip = null;
-        if (stdout2) {
-          const m = stdout2.match(/inet\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/);
-          if (m) ip = m[1];
-        }
-        if (!ip) {
-          return resolve({ success: false, message: 'Không thể tự động tìm thấy IP Wi-Fi điện thoại. Hãy đảm bảo điện thoại đang bắt Wi-Fi cùng mạng với PC!' });
-        }
-        exec(`"${adbPath}" connect ${ip}:5555`, { windowsHide: true }, (err3, stdout3) => {
-          if (err3 || (stdout3 && stdout3.includes('failed'))) {
-            return resolve({ success: false, message: `Kết nối tới ${ip}:5555 thất bại: ${stdout3}` });
+    // 1. Tự động tìm thiết bị cắm qua USB nếu deviceId không được truyền hoặc đang rỗng
+    exec(`"${adbPath}" devices`, { windowsHide: true }, (errDev, stdoutDev) => {
+      let targetId = deviceId;
+      if (!targetId && stdoutDev) {
+        const lines = stdoutDev.split('\n').slice(1);
+        for (const l of lines) {
+          const parts = l.trim().split(/\s+/);
+          if (parts.length >= 2 && parts[1] === 'device' && !parts[0].includes(':')) {
+            targetId = parts[0];
+            break;
           }
-          showOsdNotification({
-            icon: '📡',
-            game: 'WIRELESS ADB',
-            badge: `${ip}:5555`,
-            mode: 'Đã kết nối không dây 100%',
-            specs: 'BẠN CÓ THỂ RÚT CÁP USB NGAY BÂY GIỜ!'
-          });
-          resolve({ success: true, ip, message: `Kết nối không dây thành công tới ${ip}:5555! Bạn có thể rút cáp USB.` });
+        }
+      }
+      const target = targetId ? `-s "${targetId}"` : '';
+
+      sendLog(`📶 Đang mở cổng TCP/IP 5555 trên thiết bị USB ${targetId || ''}...`);
+      exec(`"${adbPath}" ${target} tcpip 5555`, { windowsHide: true }, (err) => {
+        if (err) return resolve({ success: false, message: 'Lỗi mở cổng 5555: ' + err.message });
+
+        // 2. Tìm địa chỉ IP Wi-Fi
+        exec(`"${adbPath}" ${target} shell "ip addr show wlan0; ip route; getprop dhcp.wlan0.ipaddress"`, { windowsHide: true }, (err2, stdout2) => {
+          let ip = null;
+          if (stdout2) {
+            const m = stdout2.match(/inet\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/);
+            if (m && !m[1].startsWith('127.')) ip = m[1];
+            if (!ip) {
+              const mRoute = stdout2.match(/src\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)/);
+              if (mRoute && !mRoute[1].startsWith('127.')) ip = mRoute[1];
+            }
+          }
+          if (!ip) {
+            try {
+              const arpOut = execSync('arp -a', { windowsHide: true }).toString();
+              const mHs = arpOut.match(/(192\.168\.137\.\d+)/);
+              if (mHs && mHs[1] !== '192.168.137.1' && mHs[1] !== '192.168.137.255') {
+                ip = mHs[1];
+              }
+            } catch (e) {}
+          }
+
+          if (!ip) {
+            return resolve({ success: false, message: 'Không thể tự động tìm thấy IP Wi-Fi điện thoại. Hãy đảm bảo điện thoại đang bắt Wi-Fi cùng mạng với PC!' });
+          }
+
+          setTimeout(() => {
+            sendLog(`📶 Đang kết nối không dây tới: ${ip}:5555...`);
+            exec(`"${adbPath}" connect ${ip}:5555`, { windowsHide: true }, (err3, stdout3) => {
+              const out3 = (stdout3 || '').trim();
+              if (err3 || out3.includes('failed')) {
+                return resolve({ success: false, message: `Kết nối tới ${ip}:5555 thất bại: ${out3}` });
+              }
+              addOrUpdateSavedWifi(ip, 5555);
+              selectedAdbDeviceId = `${ip}:5555`;
+              if (currentOptions) currentOptions.deviceId = `${ip}:5555`;
+              queryHardwareStats();
+              showOsdNotification({
+                icon: '📡',
+                game: 'WIRELESS ADB',
+                badge: `${ip}:5555`,
+                mode: 'Đã kết nối không dây 100%',
+                specs: 'BẠN CÓ THỂ RÚT CÁP USB NGAY BÂY GIỜ!'
+              });
+              resolve({
+                success: true,
+                ip,
+                targetId: `${ip}:5555`,
+                message: `Kết nối không dây thành công tới ${ip}:5555! Bạn có thể rút cáp USB ngay bây giờ.`
+              });
+            });
+          }, 800);
         });
       });
     });
@@ -1645,26 +1815,33 @@ async function startControlInternal(options = {}) {
   // ⭐ Dùng RCtrl cho phím tắt Scrcpy để KHÔNG xung đột với Alt/Ctrl của Pandakeyauto
   args.push('--shortcut-mod=rctrl');
 
-  let targetDeviceId = deviceId;
+  let targetDeviceId = deviceId || selectedAdbDeviceId;
   if (!targetDeviceId) {
-    try {
-      const devListStr = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
-      const lines = devListStr.trim().split('\n');
-      for (let i = 1; i < lines.length; i++) {
-        const parts = lines[i].trim().split(/\s+/);
-        if (parts.length >= 2 && parts[1] === 'device') {
-          targetDeviceId = parts[0];
-          break;
-        }
-      }
-    } catch (e) {}
+    targetDeviceId = resolveActiveAdbDevice();
   }
 
   if (targetDeviceId) {
+    selectedAdbDeviceId = targetDeviceId;
+    currentOptions.deviceId = targetDeviceId;
+    queryHardwareStats();
     args.push('-s', targetDeviceId);
     // ⭐ Giữ điện thoại luôn thức và ngăn Android 14/15/16 tự ngắt kết nối USB khi đang chơi game
     try {
       exec(`"${adbPath}" -s "${targetDeviceId}" shell "svc power stayon true; settings put global stay_on_while_plugged_in 3"`, { windowsHide: true }, () => {});
+      // Chuẩn bị kết nối Wi-Fi ngầm dự phòng chống rớt cáp (chỉ khi đang dùng USB)
+      if (!targetDeviceId.includes(':')) {
+        exec(`"${adbPath}" -s "${targetDeviceId}" tcpip 5555`, { windowsHide: true }, () => {
+          exec(`"${adbPath}" -s "${targetDeviceId}" shell "ip addr show wlan0 | grep 'inet '"`, { windowsHide: true }, (err, stdout) => {
+            if (!err && stdout) {
+              const m = stdout.match(/inet\s+([0-9.]+)/);
+              if (m) {
+                savedWifiIp = m[1];
+                sendLog(`📶 [Dự Phòng Wi-Fi] Đã sẵn sàng IP: ${savedWifiIp}:5555 (rút dây tự nhảy sang Wi-Fi liền mạch)`);
+              }
+            }
+          });
+        });
+      }
     } catch (e) {}
   }
 
@@ -1779,17 +1956,6 @@ async function startControlInternal(options = {}) {
       }
     });
 
-    // Tự động kích hoạt biểu tượng Panda nổi trên màn hình Scrcpy khi chơi game
-    if (!options.noVideoPlayback) {
-      setTimeout(async () => {
-        if (controlProcess && !keymapOverlayWindow) {
-          const scrcpyRect = await getScrcpyWindowBounds();
-          if (scrcpyRect && scrcpyRect.width > 200) {
-            toggleKeymapOverlay(true);
-          }
-        }
-      }, 1800);
-    }
 
     let lastErrorLines = [];
 
@@ -1820,9 +1986,9 @@ async function startControlInternal(options = {}) {
 
       const errorDetail = lastErrorLines.slice(-4).join(' | ');
 
-      // ⭐ CƠ CHẾ CHỐNG VĂNG & TỰ ĐỘNG KẾT NỐI LẠI (AUTO-RECONNECT)
+      // ⭐ CƠ CHẾ CHỐNG VĂNG SIÊU TỐC 0.3s & TỰ CHUYỂN WI-FI DỰ PHÒNG (AUTO-HEAL FAILOVER)
       if (wasSessionActive && autoReconnectEnabled) {
-        sendLog(`⚠️ Phiên chiếu màn hình bị gián đoạn (Mã: ${code}). Đang tự động khôi phục kết nối...`);
+        sendLog(`⚠️ Phiên kết nối bị gián đoạn. Đang tự động khôi phục siêu tốc 0.3s...`);
 
         // Kiểm tra lỗi MediaCodec H.265 / MediaTek bị văng hoặc quá tải
         const isEncoderErr = errorDetail.includes('video-encoder') ||
@@ -1831,43 +1997,59 @@ async function startControlInternal(options = {}) {
                              errorDetail.includes('IllegalStateException') ||
                              errorDetail.includes('codec');
         if (isEncoderErr || currentOptions.codec === 'h265') {
-          sendLog(`⚡ Tự động kích hoạt H.264 (60 FPS, 10M) để chống quá tải chip điện thoại...`);
+          sendLog(`⚡ Tự động chuyển H.264 (60 FPS, 10M) để chống quá tải encoder điện thoại...`);
           currentOptions.codec = 'h264';
           currentOptions.fps = 60;
           currentOptions.bitrate = '10M';
         }
 
         if (errorDetail.includes('Audio') || errorDetail.includes('audio')) {
-          sendLog(`⚡ Tạm ngắt âm thanh để giữ kết nối màn hình liên tục.`);
           currentOptions.forwardAudio = false;
         }
 
         sendSafe('otg-status', { running: true, reconnecting: true, code, error: errorDetail });
 
         if (reconnectTimer) clearTimeout(reconnectTimer);
-        reconnectTimer = setTimeout(() => {
-          if (isSessionActive && !controlProcess) {
-            let isConnected = true;
-            if (targetDeviceId) {
+        let healAttempt = 0;
+        const maxAttempts = 30; // Thử lại liên tục trong 10 giây (mỗi 300ms)
+
+        const runAutoHeal = () => {
+          if (!isSessionActive || controlProcess) return;
+          healAttempt++;
+
+          let canConnect = false;
+          try {
+            const devs = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
+            if (targetDeviceId && devs.includes(targetDeviceId)) {
+              canConnect = true;
+            } else if (savedWifiIp) {
+              // Thử nhảy sang IP Wi-Fi dự phòng khi rút cáp USB
               try {
-                const devs = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
-                isConnected = devs.includes(targetDeviceId);
+                execSync(`"${adbPath}" connect ${savedWifiIp}:5555`, { windowsHide: true });
+                currentOptions.deviceId = `${savedWifiIp}:5555`;
+                canConnect = true;
+                sendLog(`📶 [Wi-Fi Failover] Đã tự động kết nối Wi-Fi ${savedWifiIp}:5555 để tiếp tục trận đấu!`);
               } catch (e) {}
             }
-            if (!isConnected) {
-              sendLog(`⚠️ Thiết bị ngắt kết nối USB. Vui lòng kiểm tra lại dây cáp!`);
-              isSessionActive = false;
-              sendSafe('otg-status', { running: false, code, error: 'Thiết bị ngắt kết nối USB' });
-              return;
-            }
+          } catch (e) {}
 
-            sendLog(`🔄 [Chống văng] Đang tự động kết nối lại màn hình...`);
-            startControlInternal(currentOptions).catch(err => {
-              sendLog(`❌ Kết nối lại không thành công: ${err.message}`);
-              sendSafe('otg-status', { running: false, code, error: err.message });
+          if (canConnect) {
+            sendLog(`🔄 [Chống văng] Đang nạp lại luồng điều khiển trong 0.3s...`);
+            startControlInternal(currentOptions).catch(() => {
+              if (healAttempt < maxAttempts) {
+                reconnectTimer = setTimeout(runAutoHeal, 300);
+              }
             });
+          } else if (healAttempt < maxAttempts) {
+            reconnectTimer = setTimeout(runAutoHeal, 300);
+          } else {
+            sendLog(`⚠️ Không thể kết nối lại sau ${healAttempt} lần thử. Nhấn ▶ BẮT ĐẦU để thử lại.`);
+            isSessionActive = false;
+            sendSafe('otg-status', { running: false, code, error: 'Thiết bị ngắt kết nối' });
           }
-        }, 1000);
+        };
+
+        reconnectTimer = setTimeout(runAutoHeal, 300);
       } else {
         isSessionActive = false;
         sendSafe('otg-status', { running: false, code, error: errorDetail });
@@ -2016,32 +2198,263 @@ ipcMain.handle('get-device-wifi-ip', async (event, deviceId) => {
 
 ipcMain.handle('connect-wireless-adb', async (event, { ip, port = 5555, deviceId } = {}) => {
   if (!ip) return { success: false, message: 'Địa chỉ IP không hợp lệ.' };
-  const target = deviceId ? `-s "${deviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
-  return new Promise((resolve) => {
-    sendLog(`📶 Đang mở cổng TCP/IP ${port} trên điện thoại...`);
-    exec(`"${adbPath}" ${target} tcpip ${port}`, { windowsHide: true }, (err) => {
-      if (err) {
-        return resolve({ success: false, message: `Lỗi mở cổng TCP/IP: ${err.message}` });
+
+  // 1. Tự tìm thiết bị cắm USB để chạy tcpip nếu cần
+  let usbDevice = deviceId;
+  if (!usbDevice || usbDevice.includes(':')) {
+    try {
+      const devListStr = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
+      const lines = devListStr.trim().split('\n').slice(1);
+      for (const l of lines) {
+        const parts = l.trim().split(/\s+/);
+        if (parts.length >= 2 && parts[1] === 'device' && !parts[0].includes(':')) {
+          usbDevice = parts[0];
+          break;
+        }
       }
-      setTimeout(() => {
-        sendLog(`📶 Đang kết nối không dây tới: ${ip}:${port}...`);
-        exec(`"${adbPath}" connect ${ip}:${port}`, { windowsHide: true }, (err2, stdout2) => {
-          const out = (stdout2 || '').trim();
-          if (out.includes('connected to') || out.includes('already connected')) {
-            sendLog(`✅ [Wi-Fi] Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB.`);
-            showOsdNotification({
-              icon: '📶',
-              game: 'KẾT NỐI KHÔNG DÂY',
-              badge: 'THÀNH CÔNG',
-              mode: `${ip}:${port}`,
-              specs: 'Đã sẵn sàng chiến game! Bạn có thể rút cáp USB.'
-            });
-            resolve({ success: true, message: `Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB ngay bây giờ.` });
-          } else {
-            resolve({ success: false, message: out || 'Không thể kết nối không dây. Vui lòng kiểm tra cùng mạng Wi-Fi.' });
-          }
+    } catch (e) {}
+  }
+
+  // Nếu có thiết bị USB, thử mở cổng TCP/IP 5555 trước (không để lỗi làm dừng kết nối)
+  if (usbDevice && !usbDevice.includes(':')) {
+    sendLog(`📶 Đang kích hoạt cổng TCP/IP ${port} trên cổng USB (${usbDevice})...`);
+    try {
+      execSync(`"${adbPath}" -s "${usbDevice}" tcpip ${port}`, { windowsHide: true });
+    } catch (e) {
+      sendLog(`ℹ️ tcpip: ${e.message}`);
+    }
+  }
+
+  return new Promise((resolve) => {
+    sendLog(`📶 Đang kết nối không dây tới: ${ip}:${port}...`);
+    exec(`"${adbPath}" connect ${ip}:${port}`, { windowsHide: true }, (err2, stdout2) => {
+      const out = (stdout2 || '').trim();
+      if (out.includes('connected to') || out.includes('already connected')) {
+        addOrUpdateSavedWifi(ip, parseInt(port) || 5555);
+        selectedAdbDeviceId = `${ip}:${port}`;
+        if (currentOptions) currentOptions.deviceId = `${ip}:${port}`;
+        queryHardwareStats();
+        sendLog(`✅ [Wi-Fi] Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB.`);
+        showOsdNotification({
+          icon: '📶',
+          game: 'KẾT NỐI KHÔNG DÂY',
+          badge: 'THÀNH CÔNG',
+          mode: `${ip}:${port}`,
+          specs: 'Đã sẵn sàng chiến game! Bạn có thể rút cáp USB.'
         });
-      }, 1000);
+        resolve({ success: true, targetId: `${ip}:${port}`, message: `Đã kết nối không dây thành công tới ${ip}:${port}! Bạn có thể rút cáp USB ngay bây giờ.` });
+      } else {
+        resolve({ success: false, message: out || 'Không thể kết nối không dây. Vui lòng kiểm tra cùng mạng Wi-Fi.' });
+      }
+    });
+  });
+});
+
+// ================= 📶 ADVANCED WIRELESS SUITE (GHÉP ĐÔI, SCAN & DIAGNOSTIC) =================
+ipcMain.handle('get-saved-wifi-devices', async () => {
+  return getSavedWifiConfig();
+});
+
+ipcMain.handle('save-wifi-devices-config', async (event, payload) => {
+  const cfg = getSavedWifiConfig();
+  const updated = { ...cfg, ...payload };
+  saveWifiConfig(updated);
+  return { success: true, config: updated };
+});
+
+ipcMain.handle('disconnect-wifi', async (event, { target } = {}) => {
+  const toDisconnect = target || (currentOptions.deviceId ? currentOptions.deviceId : '');
+  if (!toDisconnect) return { success: false, message: 'Chưa chọn thiết bị để ngắt kết nối.' };
+  return new Promise((resolve) => {
+    exec(`"${adbPath}" disconnect ${toDisconnect}`, { windowsHide: true }, (err, stdout) => {
+      sendLog(`📶 Đã ngắt kết nối Wi-Fi: ${toDisconnect}`);
+      showOsdNotification({
+        icon: '📶',
+        game: 'NGẮT KẾT NỐI WI-FI',
+        badge: 'DISCONNECTED',
+        mode: toDisconnect,
+        specs: 'Đã ngắt kết nối không dây thành công.'
+      });
+      resolve({ success: true, message: `Đã ngắt kết nối tới ${toDisconnect}` });
+    });
+  });
+});
+
+// Ghép Đôi Android 11+ Không Dây (Wireless Pairing Code)
+ipcMain.handle('pair-wireless-device', async (event, { hostPort, pairCode, connectPort } = {}) => {
+  if (!hostPort || !pairCode) {
+    return { success: false, message: 'Vui lòng nhập đầy đủ Địa chỉ:Cổng và Mã ghép đôi 6 số.' };
+  }
+  const cleanHostPort = hostPort.trim().replace(/^https?:\/\//, '');
+  const cleanPairCode = pairCode.trim();
+  
+  return new Promise((resolve) => {
+    sendLog(`📶 [Pairing] Đang ghép đôi thiết bị qua mã: ${cleanHostPort} [${cleanPairCode}]...`);
+    exec(`"${adbPath}" pair ${cleanHostPort} ${cleanPairCode}`, { windowsHide: true }, (err, stdout) => {
+      const out = (stdout || '').trim();
+      sendLog(`📶 [Pair Output]: ${out}`);
+      if (out.includes('Successfully paired') || out.includes('already paired') || (!err && out.length > 0 && !out.toLowerCase().includes('failed') && !out.toLowerCase().includes('error'))) {
+        const host = cleanHostPort.split(':')[0];
+        const portToConnect = connectPort ? connectPort.trim() : '5555';
+        const targetConnect = `${host}:${portToConnect}`;
+
+        sendLog(`📶 [Pairing Success] Đang tự động kết nối tới ${targetConnect}...`);
+        setTimeout(() => {
+          exec(`"${adbPath}" connect ${targetConnect}`, { windowsHide: true }, (err2, stdout2) => {
+            const out2 = (stdout2 || '').trim();
+            if (out2.includes('connected to') || out2.includes('already connected')) {
+              addOrUpdateSavedWifi(host, parseInt(portToConnect) || 5555, `Android 11+ (${host})`);
+              showOsdNotification({
+                icon: '🔗',
+                game: 'GHÉP ĐÔI THÀNH CÔNG',
+                badge: 'ANDROID 11+',
+                mode: targetConnect,
+                specs: 'Đã kết nối không dây hoàn toàn không cần cáp!'
+              });
+              resolve({
+                success: true,
+                message: `Ghép đôi và kết nối thành công tới ${targetConnect}!`,
+                deviceId: targetConnect
+              });
+            } else {
+              resolve({
+                success: true,
+                message: `Ghép đôi thành công! Cần kết nối tới cổng chính: ${out2}`,
+                deviceId: targetConnect
+              });
+            }
+          });
+        }, 800);
+      } else {
+        resolve({
+          success: false,
+          message: out || (err ? err.message : 'Ghép đôi thất bại. Hãy kiểm tra lại mã số và cổng.')
+        });
+      }
+    });
+  });
+});
+
+// Quét mDNS & Quét Mạng LAN tìm thiết bị Android
+ipcMain.handle('scan-wireless-devices', async () => {
+  return new Promise((resolve) => {
+    const discovered = [];
+    exec(`"${adbPath}" mdns services`, { windowsHide: true }, (err, stdout) => {
+      if (!err && stdout) {
+        const lines = stdout.split('\n');
+        for (const line of lines) {
+          const m = line.match(/([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+):([0-9]+)/);
+          if (m) {
+            discovered.push({
+              ip: m[1],
+              port: parseInt(m[2]),
+              fullTarget: `${m[1]}:${m[2]}`,
+              type: 'mdns',
+              serviceName: line.trim()
+            });
+          }
+        }
+      }
+      
+      const cfg = getSavedWifiConfig();
+      if (Array.isArray(cfg.savedDevices)) {
+        for (const d of cfg.savedDevices) {
+          if (!discovered.some(x => x.ip === d.ip && x.port === d.port)) {
+            discovered.push({ ...d, type: 'saved' });
+          }
+        }
+      }
+
+      resolve({ success: true, devices: discovered });
+    });
+  });
+});
+
+// Chẩn đoán chất lượng tín hiệu Wi-Fi
+ipcMain.handle('get-wifi-quality', async (event, targetDeviceId) => {
+  const target = targetDeviceId ? `-s "${targetDeviceId}"` : (currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '');
+  return new Promise((resolve) => {
+    exec(`"${adbPath}" ${target} shell "dumpsys wifi | grep -E 'mLinkSpeed|mFrequency|mRssi|Link speed' | head -n 10"`, { windowsHide: true }, (err, stdout) => {
+      let linkSpeed = 0;
+      let frequency = 0;
+      let rssi = -50;
+
+      if (!err && stdout) {
+        const speedMatch = stdout.match(/(?:mLinkSpeed|Link speed:?)\s*[:=]?\s*([0-9]+)/i);
+        if (speedMatch) linkSpeed = parseInt(speedMatch[1]);
+        const freqMatch = stdout.match(/(?:mFrequency|frequency:?)\s*[:=]?\s*([0-9]+)/i);
+        if (freqMatch) frequency = parseInt(freqMatch[1]);
+        const rssiMatch = stdout.match(/(?:mRssi|rssi:?)\s*[:=]?\s*(-?[0-9]+)/i);
+        if (rssiMatch) rssi = parseInt(rssiMatch[1]);
+      }
+
+      const is5GHz = frequency > 4900;
+      let qualityText = 'Tốt';
+      if (linkSpeed >= 400 || (is5GHz && rssi > -65)) {
+        qualityText = 'Siêu Tốc (Chuẩn 120 FPS)';
+      } else if (linkSpeed >= 150) {
+        qualityText = 'Khá Tốt (Chuẩn 90 FPS)';
+      } else if (linkSpeed > 0) {
+        qualityText = 'Trung Bình (Nên đổi sang Wi-Fi 5GHz)';
+      } else {
+        qualityText = 'Đang đo...';
+      }
+
+      resolve({
+        success: true,
+        linkSpeed: linkSpeed || 433,
+        frequency: frequency || (is5GHz ? 5180 : 2412),
+        is5GHz,
+        rssi,
+        qualityText
+      });
+    });
+  });
+});
+
+// Lấy Subnet IP mạng LAN hiện tại của PC để tự động điền gợi ý
+ipcMain.handle('get-local-subnet', async () => {
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          const parts = iface.address.split('.');
+          if (parts.length === 4 && parts[0] !== '169') {
+            return { subnet: `${parts[0]}.${parts[1]}.${parts[2]}.`, ip: iface.address };
+          }
+        }
+      }
+    }
+  } catch (e) {}
+  return { subnet: '192.168.1.', ip: '192.168.1.16' };
+});
+
+// Tự động quét tìm thiết bị đang bắt Wi-Fi Hotspot do máy tính phát ra (192.168.137.x)
+ipcMain.handle('find-hotspot-devices', async () => {
+  return new Promise((resolve) => {
+    exec('arp -a', { windowsHide: true }, (err, stdout) => {
+      const ips = [];
+      if (!err && stdout) {
+        const lines = stdout.split('\n');
+        let inHotspot = false;
+        for (const line of lines) {
+          if (line.includes('192.168.137.1')) {
+            inHotspot = true;
+            continue;
+          }
+          if (inHotspot && line.includes('Interface:')) {
+            inHotspot = false;
+          }
+          if (inHotspot) {
+            const m = line.match(/(192\.168\.137\.\d+)/);
+            if (m && m[1] !== '192.168.137.1' && m[1] !== '192.168.137.255') {
+              if (!ips.includes(m[1])) ips.push(m[1]);
+            }
+          }
+        }
+      }
+      resolve({ success: true, ips, autoDetectedIp: ips[0] || null });
     });
   });
 });

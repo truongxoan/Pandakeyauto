@@ -35,7 +35,19 @@ contextBridge.exposeInMainWorld('api', {
   getGithubConfig: () => ipcRenderer.invoke('get-github-config'),
   saveGithubConfig: (payload) => ipcRenderer.invoke('save-github-config', payload),
 
-  // VIP Crosshair & Phone Cooler APIs
+  // Window Controls (Mini HUD ~200x200 & Orb Mode)
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  closeWindow: () => ipcRenderer.invoke('close-window'),
+  toggleAlwaysOnTop: () => ipcRenderer.invoke('toggle-always-on-top'),
+  toggleWindowSize: (size) => ipcRenderer.invoke('toggle-window-size', size),
+  toggleOrbMode: () => ipcRenderer.invoke('toggle-orb-mode'),
+  setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
+
+  // Gaming Precision & Automation APIs
+  setMouseRatioY: (ratio) => ipcRenderer.invoke('set-mouse-ratio-y', ratio),
+  toggleCursorLock: (enabled) => ipcRenderer.invoke('toggle-cursor-lock', enabled),
+
+  // VIP Phone Cooler APIs
   toggleCrosshair: (enabled) => ipcRenderer.invoke('toggle-crosshair', enabled),
   updateCrosshair: (config) => ipcRenderer.invoke('update-crosshair', config),
   togglePhoneCooler: (payload) => ipcRenderer.invoke('toggle-phone-cooler', payload),
@@ -86,9 +98,17 @@ contextBridge.exposeInMainWorld('api', {
   setKeymapOverlayInteractive: (interactive) => ipcRenderer.invoke('set-keymap-overlay-interactive', interactive),
   injectKeymapKey: (payload) => ipcRenderer.invoke('inject-keymap-key', payload),
 
-  // 📶 1-Click Wireless ADB APIs
+  // 📶 1-Click Wireless ADB & Advanced Wireless Suite APIs
   getDeviceWifiIp: (deviceId) => ipcRenderer.invoke('get-device-wifi-ip', deviceId),
   connectWirelessAdb: (payload) => ipcRenderer.invoke('connect-wireless-adb', payload),
+  pairWirelessDevice: (payload) => ipcRenderer.invoke('pair-wireless-device', payload),
+  disconnectWifi: (payload) => ipcRenderer.invoke('disconnect-wifi', payload),
+  scanWirelessDevices: () => ipcRenderer.invoke('scan-wireless-devices'),
+  getSavedWifiDevices: () => ipcRenderer.invoke('get-saved-wifi-devices'),
+  saveWifiDevicesConfig: (payload) => ipcRenderer.invoke('save-wifi-devices-config', payload),
+  getWifiQuality: (deviceId) => ipcRenderer.invoke('get-wifi-quality', deviceId),
+  getLocalSubnet: () => ipcRenderer.invoke('get-local-subnet'),
+  findHotspotDevices: () => ipcRenderer.invoke('find-hotspot-devices'),
 
   // 🎛️ Footstep Booster & 👁️ Digital Vibrance APIs
   toggleFootstepBooster: (forceState) => ipcRenderer.invoke('toggle-footstep-booster', forceState),
@@ -108,11 +128,16 @@ contextBridge.exposeInMainWorld('api', {
   closeTranslatorOverlay: () => ipcRenderer.invoke('close-translator-overlay'),
   setTranslatorConfig: (config) => ipcRenderer.invoke('set-translator-config', config),
 
+  setSelectedDevice: (deviceId) => ipcRenderer.invoke('set-selected-device', deviceId),
+  pollHardwareStats: () => ipcRenderer.invoke('poll-hardware-stats'),
+
   // Core Events
   onRequestStartControl: (callback) => ipcRenderer.on('request-start-control', () => callback()),
   onOtgLog: (callback) => ipcRenderer.on('otg-log', (_event, value) => callback(value)),
   onOtgStatus: (callback) => ipcRenderer.on('otg-status', (_event, value) => callback(value)),
   onRecoilToggled: (callback) => ipcRenderer.on('recoil-toggled-global', (_event, value) => callback(value)),
   onQuickSniperToggled: (callback) => ipcRenderer.on('quick-sniper-toggled-global', (_event, value) => callback(value)),
-  onScreenshotCaptured: (callback) => ipcRenderer.on('screenshot-captured', (_event, value) => callback(value))
+  onScreenshotCaptured: (callback) => ipcRenderer.on('screenshot-captured', (_event, value) => callback(value)),
+  onGameAutoDetected: (callback) => ipcRenderer.on('game-auto-detected', (_event, value) => callback(value)),
+  onHardwareStats: (callback) => ipcRenderer.on('hardware-stats', (_event, value) => callback(value))
 });
