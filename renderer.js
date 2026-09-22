@@ -788,25 +788,30 @@ async function setActiveProfile(profileId) {
 function updateModeDisplay() {
   if (!activeMode) return;
 
-  elLblModeIcon.textContent = activeProfile.icon || '⚡';
-  elLblModeName.textContent = activeMode.name;
-  elLblModeTag.textContent = activeMode.tag || 'Mặc Định';
-  elLblModeDesc.textContent = activeMode.description || '';
+  if (elLblModeIcon) elLblModeIcon.textContent = activeProfile.icon || '⚡';
+  if (elLblModeName) elLblModeName.textContent = activeMode.name;
+  if (elLblModeTag) elLblModeTag.textContent = activeMode.tag || 'Mặc Định';
+  if (elLblModeDesc) elLblModeDesc.textContent = activeMode.description || '';
+
+  const drawerTag = document.getElementById('drawerLblModeTag');
+  const drawerDesc = document.getElementById('drawerLblModeDesc');
+  if (drawerTag) drawerTag.textContent = activeMode.tag || 'Mặc Định';
+  if (drawerDesc) drawerDesc.textContent = activeMode.description || '';
 
   // Badges
-  elBadgeFps.textContent = `${activeMode.fps || 60} FPS`;
-  elBadgeCodec.textContent = (activeMode.codec || 'h264').toUpperCase();
-  elBadgeBuffer.textContent = `Đệm: ${activeMode.displayBuffer !== undefined ? activeMode.displayBuffer : 0}ms`;
-  elBadgeBitrate.textContent = activeMode.bitrate || '16M';
-  elBadgeSize.textContent = activeMode.maxSize ? `${activeMode.maxSize}p` : 'Gốc';
+  if (elBadgeFps) elBadgeFps.textContent = `${activeMode.fps || 60} FPS`;
+  if (elBadgeCodec) elBadgeCodec.textContent = (activeMode.codec || 'h264').toUpperCase();
+  if (elBadgeBuffer) elBadgeBuffer.textContent = `Đệm: ${activeMode.displayBuffer !== undefined ? activeMode.displayBuffer : 0}ms`;
+  if (elBadgeBitrate) elBadgeBitrate.textContent = activeMode.bitrate || '16M';
+  if (elBadgeSize) elBadgeSize.textContent = activeMode.maxSize ? `${activeMode.maxSize}p` : 'Gốc';
 
   // Đồng bộ sang dropdown điều khiển
-  if (activeMode.codec) elSelCodec.value = activeMode.codec;
-  if (activeMode.fps) elSelFps.value = String(activeMode.fps);
-  if (activeMode.displayBuffer !== undefined) elSelDisplayBuffer.value = String(activeMode.displayBuffer);
-  if (activeMode.maxSize !== undefined) elSelMaxSize.value = String(activeMode.maxSize);
-  if (activeMode.bitrate) elSelBitrate.value = activeMode.bitrate;
-  if (activeMode.renderDriver) elSelRenderDriver.value = activeMode.renderDriver;
+  if (elSelCodec && activeMode.codec) elSelCodec.value = activeMode.codec;
+  if (elSelFps && activeMode.fps) elSelFps.value = String(activeMode.fps);
+  if (elSelDisplayBuffer && activeMode.displayBuffer !== undefined) elSelDisplayBuffer.value = String(activeMode.displayBuffer);
+  if (elSelMaxSize && activeMode.maxSize !== undefined) elSelMaxSize.value = String(activeMode.maxSize);
+  if (elSelBitrate && activeMode.bitrate) elSelBitrate.value = activeMode.bitrate;
+  if (elSelRenderDriver && activeMode.renderDriver) elSelRenderDriver.value = activeMode.renderDriver;
   if (elSelMouseSpeed && activeMode.mouseSpeed) elSelMouseSpeed.value = String(activeMode.mouseSpeed);
 
   if (activeMode.mirrorScreen !== undefined) {
@@ -817,34 +822,51 @@ function updateModeDisplay() {
   if (elChkEnableControl && activeMode.enableControl !== undefined) elChkEnableControl.checked = !!activeMode.enableControl;
   if (elChkUhidInput && activeMode.uhidInput !== undefined) elChkUhidInput.checked = activeMode.uhidInput !== false;
   if (elChkTurnScreenOff && activeMode.turnScreenOff !== undefined) elChkTurnScreenOff.checked = !!activeMode.turnScreenOff;
-  if (activeMode.forwardAudio !== undefined) elChkForwardAudio.checked = activeMode.forwardAudio;
-  if (activeMode.stayAwake !== undefined) elChkStayAwake.checked = activeMode.stayAwake;
+  if (activeMode.forwardAudio !== undefined && elChkForwardAudio) elChkForwardAudio.checked = activeMode.forwardAudio;
+  if (activeMode.stayAwake !== undefined && elChkStayAwake) elChkStayAwake.checked = activeMode.stayAwake;
 }
 
 // Nút mũi tên Trái / Phải
-elBtnNextMode.addEventListener('click', async () => {
-  const result = await window.api.nextMode();
-  if (result && result.mode) {
-    activeProfile = result.profile;
-    activeMode = result.mode;
-    playSoundCue('mode');
-    updateModeDisplay();
-    updateFooterLog(`🎮 [Nút ▶] Đã chuyển sang: ${result.mode.name}`);
-    if (isControlling) startCurrentControl();
-  }
-});
+if (elBtnNextMode) {
+  elBtnNextMode.addEventListener('click', async () => {
+    const result = await window.api.nextMode();
+    if (result && result.mode) {
+      activeProfile = result.profile;
+      activeMode = result.mode;
+      playSoundCue('mode');
+      updateModeDisplay();
+      updateFooterLog(`🎮 [Nút ▶] Đã chuyển sang: ${result.mode.name}`);
+      if (isControlling) startCurrentControl();
+    }
+  });
+}
 
-elBtnPrevMode.addEventListener('click', async () => {
-  const result = await window.api.prevMode();
-  if (result && result.mode) {
-    activeProfile = result.profile;
-    activeMode = result.mode;
-    playSoundCue('mode');
-    updateModeDisplay();
-    updateFooterLog(`🎮 [Nút ◀] Đã chuyển sang: ${result.mode.name}`);
-    if (isControlling) startCurrentControl();
-  }
-});
+if (elBtnPrevMode) {
+  elBtnPrevMode.addEventListener('click', async () => {
+    const result = await window.api.prevMode();
+    if (result && result.mode) {
+      activeProfile = result.profile;
+      activeMode = result.mode;
+      playSoundCue('mode');
+      updateModeDisplay();
+      updateFooterLog(`🎮 [Nút ◀] Đã chuyển sang: ${result.mode.name}`);
+      if (isControlling) startCurrentControl();
+    }
+  });
+}
+
+const elDrawerBtnNextMode = document.getElementById('drawerBtnNextMode');
+const elDrawerBtnPrevMode = document.getElementById('drawerBtnPrevMode');
+if (elDrawerBtnNextMode) {
+  elDrawerBtnNextMode.addEventListener('click', () => {
+    if (elBtnNextMode) elBtnNextMode.click();
+  });
+}
+if (elDrawerBtnPrevMode) {
+  elDrawerBtnPrevMode.addEventListener('click', () => {
+    if (elBtnPrevMode) elBtnPrevMode.click();
+  });
+}
 
 // Lưu tùy chọn người dùng chỉnh thủ công vào active mode
 function handleTuningChange() {

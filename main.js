@@ -143,10 +143,10 @@ async function toggleKeymapOverlay(enable) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 210,
-    height: 210,
-    minWidth: 200,
-    minHeight: 200,
+    width: 360,
+    height: 520,
+    minWidth: 280,
+    minHeight: 360,
     backgroundColor: '#090d1a',
     show: true,
     autoHideMenuBar: true,
@@ -348,19 +348,19 @@ ipcMain.handle('toggle-window-size', (event, targetSize) => {
       return { w: targetSize.w, h: targetSize.h };
     }
     const [w, h] = mainWindow.getSize();
-    if (w <= 240 && h <= 240) {
-      mainWindow.setSize(380, 480);
-      return { w: 380, h: 480, expanded: true };
+    if (w < 420) {
+      mainWindow.setSize(480, 640);
+      return { w: 480, h: 640, expanded: true };
     } else {
-      mainWindow.setSize(210, 210);
-      return { w: 210, h: 210, expanded: false };
+      mainWindow.setSize(360, 520);
+      return { w: 360, h: 520, expanded: false };
     }
   }
-  return { w: 210, h: 210, expanded: false };
+  return { w: 360, h: 520, expanded: false };
 });
 
 let isOrbMode = false;
-let savedPreOrbBounds = { width: 210, height: 210 };
+let savedPreOrbBounds = { width: 360, height: 520 };
 let savedWifiIp = null;
 let mouseRatioY = 1.5;
 let isCursorLocked = false;
@@ -380,8 +380,8 @@ ipcMain.handle('toggle-orb-mode', () => {
       mainWindow.setSize(44, 44);
       mainWindow.setAlwaysOnTop(true);
     } else {
-      mainWindow.setMinimumSize(200, 200);
-      mainWindow.setSize(savedPreOrbBounds.width || 210, savedPreOrbBounds.height || 210);
+      mainWindow.setMinimumSize(280, 360);
+      mainWindow.setSize(savedPreOrbBounds.width || 360, savedPreOrbBounds.height || 520);
     }
     return { isOrbMode };
   }

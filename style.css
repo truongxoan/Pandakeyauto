@@ -142,14 +142,24 @@ body.mini-app-body {
   color: #fff;
 }
 
-/* ================= 2. GIAO DIỆN CHÍNH (MAIN VIEW ~200x200) ================= */
+/* ================= 2. GIAO DIỆN CHÍNH (MAIN VIEW) ================= */
 .mini-main-view {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 4px 6px;
-  overflow: hidden;
+  padding: 5px 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  gap: 5px;
+}
+
+.mini-main-view::-webkit-scrollbar {
+  width: 3px;
+}
+
+.mini-main-view::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 254, 0.35);
+  border-radius: 4px;
 }
 
 /* Thanh thiết bị điện thoại */
@@ -339,12 +349,12 @@ body.mini-app-body {
   color: #ff99aa;
 }
 
-/* ================= 3. QUICK ACTIONS DOCK (4 NÚT TÁC VỤ NHANH) ================= */
+/* ================= 3. QUICK ACTIONS DOCK (VIP GAMING DOCK) ================= */
 .quick-action-dock {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 3px;
-  height: 36px;
+  height: 38px;
   flex-shrink: 0;
 }
 
@@ -1559,6 +1569,114 @@ body.mini-app-body {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
+}
+
+/* ================= ⚡ MODE STEPPER STRIP ================= */
+.mode-stepper-strip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(14, 24, 46, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.22);
+  border-radius: 8px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.mode-stepper-strip:hover {
+  border-color: rgba(0, 242, 254, 0.45);
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+}
+.btn-stepper-arrow {
+  width: 22px;
+  height: 22px;
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  border-radius: 5px;
+  color: var(--cyan);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.btn-stepper-arrow:hover {
+  background: var(--cyan);
+  color: #000;
+  box-shadow: 0 0 8px var(--cyan);
+}
+.mode-stepper-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.mode-icon-glow {
+  font-size: 13px;
+  filter: drop-shadow(0 0 4px var(--cyan));
+}
+.mode-titles {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+.mode-name-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+}
+.mode-desc-sub {
+  font-size: 7.5px;
+  font-weight: 600;
+  color: var(--cyan);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+/* ================= 🚀 QUICK TOOLS STRIP ================= */
+.quick-tools-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  flex-shrink: 0;
+}
+.tool-btn {
+  background: rgba(14, 22, 42, 0.65);
+  border: 1px solid rgba(0, 242, 254, 0.18);
+  border-radius: 6px;
+  height: 24px;
+  color: #cbd5e1;
+  font-size: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+.tool-btn:hover {
+  background: rgba(0, 242, 254, 0.2);
+  border-color: var(--cyan);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.25);
+}
+.tool-btn:active {
+  transform: translateY(1px);
 }
 
 

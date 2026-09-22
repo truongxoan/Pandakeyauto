@@ -125,6 +125,19 @@
         <div class="hw-chip hw-game" id="hwGameChip" title="Game đang mở (Tự động nhận diện)"><span class="hw-icon">🎯</span><span id="hwGameText">Ready</span></div>
       </div>
 
+      <!-- BỘ CHUYỂN CHẾ ĐỘ CHƠI (MODE STEPPER: 120 FPS / 90 FPS / CÂN BẰNG) -->
+      <div class="mode-stepper-strip" title="Chuyển chế độ tối ưu (Phím tắt: Alt+Left / Alt+Right)">
+        <button type="button" class="btn-stepper-arrow" id="btnPrevMode" title="Chế độ trước (Alt+Left)">◀</button>
+        <div class="mode-stepper-center" id="chipActiveModeMini" title="Bấm để đổi chế độ">
+          <span class="mode-icon-glow" id="lblModeIcon">⚡</span>
+          <div class="mode-titles">
+            <strong class="mode-name-title" id="lblModeName">Sinh Tồn 120 FPS</strong>
+            <small class="mode-desc-sub"><span id="lblModeTag">Thi Đấu</span> • <span id="lblModeDesc">120 FPS • 0ms Delay</span></small>
+          </div>
+        </div>
+        <button type="button" class="btn-stepper-arrow" id="btnNextMode" title="Chế độ tiếp theo (Alt+Right)">▶</button>
+      </div>
+
       <!-- CÔNG TẮC BẬT / TẮT CHIẾU MÀN HÌNH ĐIỆN THOẠI LÊN MÁY TÍNH -->
       <div class="mirror-toggle-strip" id="mirrorToggleStrip" title="Chọn: Chiếu toàn bộ màn hình điện thoại lên PC hoặc Không chiếu (Chỉ điều khiển trên màn thật)">
         <button type="button" class="strip-tab-btn active" id="btnToggleMirrorOn" title="Bật chiếu toàn bộ màn hình điện thoại lên máy tính (120 FPS mượt mà)">
@@ -153,31 +166,51 @@
         <button id="btnStopMirror" class="btn-hero-stop-hidden" style="display:none;"></button>
       </div>
 
-      <!-- DOCK 4 PHÍM TÁC VỤ NHANH (QUICK ACTIONS DOCK) -->
+      <!-- DOCK 6 PHÍM TÁC VỤ NHANH & VIP GAMING -->
       <div class="quick-action-dock">
         <!-- 1. Ghìm tâm tự động F6 -->
         <button class="dock-btn" id="btnToggleRecoil" title="Bật/Tắt Ghìm Tâm Tự Động (F6)">
           <span class="dock-icon">🎯</span>
-          <span class="dock-kbd">F6</span>
+          <span class="dock-kbd">F6 Ghìm</span>
         </button>
 
-        <!-- 2. Phím ảo In-Game HUD F12 -->
-        <button class="dock-btn" id="btnToggleKeymapHud" title="Bật/Tắt HUD Phím Ảo Trong Game (F12)">
-          <span class="dock-icon">⌨️</span>
-          <span class="dock-kbd">F12</span>
+        <!-- 2. Bắn Sniper Quick-Switch F7 -->
+        <button class="dock-btn" id="btnToggleQuickSniper" title="Bật/Tắt Quick-Switch Sniper (F7)">
+          <span class="dock-icon">🔫</span>
+          <span class="dock-kbd">F7 Sniper</span>
         </button>
 
-        <!-- 3. Dịch màn hình tức thì F10 -->
+        <!-- 3. Chụp ảnh màn hình Highlight F9 -->
+        <button class="dock-btn" id="btnCaptureInstantScreenshot" title="Chụp Ảnh Highlight Nhanh (F9)">
+          <span class="dock-icon">📸</span>
+          <span class="dock-kbd">F9 Chụp</span>
+        </button>
+
+        <!-- 4. Dịch màn hình tức thì F10 -->
         <button class="dock-btn" id="btnTriggerScreenTranslate" title="Dịch Màn Hình Game Siêu Tốc OCR (F10 / Alt+T)">
           <span class="dock-icon">🌐</span>
-          <span class="dock-kbd">F10</span>
+          <span class="dock-kbd">F10 Dịch</span>
         </button>
 
-        <!-- 4. Ngăn Cài Đặt & Tiện Ích -->
+        <!-- 5. Phím ảo In-Game HUD F12 -->
+        <button class="dock-btn" id="btnToggleKeymapHud" title="Bật/Tắt HUD Phím Ảo Trong Game (F12)">
+          <span class="dock-icon">⌨️</span>
+          <span class="dock-kbd">F12 Phím</span>
+        </button>
+
+        <!-- 6. Ngăn Cài Đặt & Tiện Ích -->
         <button class="dock-btn dock-btn-menu" id="btnOpenDrawer" title="Mở Cài Đặt Chi Tiết & Game Profiles">
           <span class="dock-icon">⚙️</span>
           <span class="dock-kbd">MENU</span>
         </button>
+      </div>
+
+      <!-- HÀNG TIỆN ÍCH TĂNG TỐC & TẢN NHIỆT NHANH -->
+      <div class="quick-tools-strip">
+        <button type="button" class="tool-btn" id="btnBoostDevice" title="Tăng tốc độ nhạy & phản xạ cảm ứng 0ms">🚀 Tăng Tốc</button>
+        <button type="button" class="tool-btn" id="btnToggleCooler" title="Bật chế độ tản nhiệt làm mát điện thoại">❄️ Tản Nhiệt</button>
+        <button type="button" class="tool-btn" id="btnActivatePanda" title="Kích hoạt dịch vụ bàn phím Panda Pro">🐼 Panda</button>
+        <button type="button" class="tool-btn" id="btnRestartAdb" title="Khởi động lại ADB kết nối khi gặp trục trặc">🔄 Reset ADB</button>
       </div>
 
       <!-- FOOTER MINI STATUS BAR -->
@@ -314,12 +347,12 @@
         <div class="drawer-section">
           <div class="drawer-section-title"><span>⚡ Chế Độ Bắn:</span></div>
           <div class="mode-stepper-row">
-            <button class="btn-stepper" id="btnPrevMode" title="Chế độ trước (Alt+Left)">◀</button>
+            <button class="btn-stepper" id="drawerBtnPrevMode" title="Chế độ trước (Alt+Left)">◀</button>
             <div class="stepper-label">
-              <span class="mode-tag" id="lblModeTag">Thi Đấu</span>
-              <p class="mode-desc" id="lblModeDesc">Tối ưu 120 FPS 0ms đệm.</p>
+              <span class="mode-tag" id="drawerLblModeTag">Thi Đấu</span>
+              <p class="mode-desc" id="drawerLblModeDesc">Tối ưu 120 FPS 0ms đệm.</p>
             </div>
-            <button class="btn-stepper" id="btnNextMode" title="Chế độ tiếp (Alt+Right)">▶</button>
+            <button class="btn-stepper" id="drawerBtnNextMode" title="Chế độ tiếp (Alt+Right)">▶</button>
           </div>
           <div class="specs-mini-row" style="display:none;">
             <span id="badgeFps">120 FPS</span>
@@ -504,6 +537,69 @@
       <input type="range" id="rngFovSize" value="120">
       <span id="lblFovSize"></span>
       <input type="checkbox" id="chkTriggerbot">
+      <span id="lblRecoilState"></span>
+      <button id="btnToggleRecoilQuick"></button>
+      <span id="lblRecoilStateQuick"></span>
+      <input type="range" id="rngRecoilJitter" value="0">
+      <span id="lblRecoilJitter"></span>
+      <select id="selIpadPreset"></select>
+      <div id="boxIpadCustom"></div>
+      <input type="text" id="txtIpadWidth">
+      <input type="text" id="txtIpadHeight">
+      <input type="text" id="txtIpadDensity">
+      <button id="btnApplyIpadView"></button>
+      <button id="btnResetIpadView"></button>
+      <span id="ipadViewStatus"></span>
+      <button id="btnToggleIpadSwitch"></button>
+      <span id="lblIpadState"></span>
+      <button id="btnToggleRecordMacro"></button>
+      <select id="selMacroLoop"></select>
+      <select id="selMacroSpeed"></select>
+      <span id="macroStatus"></span>
+      <button id="btnToggleMacroPlay"></button>
+      <span id="lblMacroState"></span>
+      <button id="btnRefreshBattery"></button>
+      <span id="hudTemp"></span>
+      <span id="hudTempBadge"></span>
+      <span id="hudLevel"></span>
+      <div id="hudBatteryFill"></div>
+      <span id="hudStatus"></span>
+      <span id="hudVoltage"></span>
+      <span id="hudHealth"></span>
+      <span id="hudPowerSource"></span>
+      <span id="bypassStatus"></span>
+      <button id="btnSet120Hz"></button>
+      <button id="btnSet90Hz"></button>
+      <button id="btnReset60Hz"></button>
+      <button id="btnSwitchBypass"></button>
+      <span id="lblBypassState"></span>
+      <div id="apkDropzone"></div>
+      <input type="file" id="filePickerInput">
+      <button id="btnBrowseFile"></button>
+      <div id="dropzoneProgress"></div>
+      <div id="dropzoneProgressFill"></div>
+      <span id="dropzoneProgressText"></span>
+      <button id="btnActivateWirelessAdb"></button>
+      <span id="wirelessStatusBadge"></span>
+      <button id="btnOpenRecordings"></button>
+      <button id="btnToggleShowTouches"></button>
+      <span id="touchesStatusBadge"></span>
+      <button id="btnSwitchTouches"></button>
+      <span id="lblTouchesState"></span>
+      <button id="btnSwitchColorAssist"></button>
+      <span id="lblColorAssistState"></span>
+      <span id="colorAssistStatus"></span>
+      <select id="selEnemyFilter"></select>
+      <input type="checkbox" id="chkTriggerBot">
+      <span id="lblFootstepBoosterState"></span>
+      <span id="lblDigitalVibranceState"></span>
+      <button id="btnDetectIp"></button>
+      <input type="text" id="txtWirelessIp">
+      <input type="text" id="txtWirelessPort">
+      <span id="lblQuickSniperState"></span>
+      <button id="btnTestQuickSniper"></button>
+      <span id="quickSniperStatus"></span>
+      <span id="lblClutchShieldState"></span>
     </div>
 
   </div>
