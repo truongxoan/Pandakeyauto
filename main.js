@@ -206,6 +206,13 @@ function createWindow() {
     });
   } catch (e) {}
 
+  // 3.5. Phím tắt F8 toàn cục: Bật/Tắt truyền âm thanh điện thoại qua máy tính (Scrcpy Audio)
+  try {
+    globalShortcut.register('F8', () => {
+      try { toggleAudioForwardingGlobal(); } catch (e) {}
+    });
+  } catch (e) {}
+
   // 4. Phím tắt F9 toàn cục Chụp ảnh khoảnh khắc Highlight
   try {
     globalShortcut.register('F9', () => {
@@ -1951,7 +1958,14 @@ async function startControlInternal(options = {}) {
     args.push('--window-title=Pandakeyauto - Vung Bat Chuot');
     args.push('--always-on-top');
     args.push('--stay-awake');
-    if (!forwardAudio) args.push('--no-audio');
+    if (forwardAudio) {
+      args.push('--audio-source=playback');
+      if (audioBuffer !== undefined && audioBuffer !== null) {
+        args.push(`--audio-buffer=${audioBuffer}`);
+      }
+    } else {
+      args.push('--no-audio');
+    }
   }
 
   try {
@@ -2016,6 +2030,8 @@ async function startControlInternal(options = {}) {
 
         if (errorDetail.includes('Audio') || errorDetail.includes('audio')) {
           currentOptions.forwardAudio = false;
+          sendSafe('audio-forwarding-changed', { forwardAudio: false });
+          sendLog('⚠️ [Audio] Thiết bị không hỗ trợ truyền âm thanh, tự động tắt truyền âm sang PC.');
         }
 
         sendSafe('otg-status', { running: true, reconnecting: true, code, error: errorDetail });
@@ -2095,6 +2111,37 @@ ipcMain.handle('start-control', async (event, options = {}) => {
 
 ipcMain.handle('stop-control', async () => {
   return stopActiveControl();
+});
+
+// ================= 🔊 BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH (F8 / TOGGLE) =================
+function toggleAudioForwardingGlobal(forceState) {
+  const newState = forceState !== undefined ? !!forceState : !currentOptions.forwardAudio;
+  currentOptions.forwardAudio = newState;
+
+  showOsdNotification({
+    icon: newState ? '🔊' : '🔇',
+    game: 'ÂM THANH SCRCPY',
+    badge: newState ? 'BẬT (F8)' : 'TẮT (F8)',
+    mode: newState ? 'Đã Bật Truyền Âm PC' : 'Đã Tắt Truyền Âm PC',
+    specs: newState ? 'Âm thanh điện thoại phát qua Loa/Tai nghe PC' : 'Âm thanh phát trên điện thoại (0ms trễ)'
+  });
+
+  sendLog(`🔊 [F8] Đã ${newState ? 'BẬT' : 'TẮT'} truyền âm thanh qua máy tính.`);
+  sendSafe('audio-forwarding-changed', { forwardAudio: newState });
+
+  if (isSessionActive && controlProcess) {
+    startControlInternal(currentOptions);
+  }
+
+  return { success: true, forwardAudio: newState };
+}
+
+ipcMain.handle('toggle-audio-forwarding', async (event, forceState) => {
+  return toggleAudioForwardingGlobal(forceState);
+});
+
+ipcMain.handle('get-audio-forwarding', async () => {
+  return { success: true, forwardAudio: !!currentOptions.forwardAudio };
 });
 
 function stopActiveControl() {

@@ -150,6 +150,18 @@
         </button>
       </div>
 
+      <!-- CÔNG TẮC BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH -->
+      <div class="mirror-toggle-strip audio-toggle-strip" id="audioToggleStrip" title="Chọn: Truyền âm thanh điện thoại sang PC hoặc Giữ âm thanh trên điện thoại (Phím tắt: F8)">
+        <button type="button" class="strip-tab-btn active" id="btnToggleAudioOn" title="Bật truyền âm thanh từ điện thoại sang PC (F8)">
+          <span class="tab-ico">🔊</span>
+          <span class="tab-txt">Truyền Âm PC (F8)</span>
+        </button>
+        <button type="button" class="strip-tab-btn" id="btnToggleAudioOff" title="Tắt truyền âm thanh sang PC - Nghe trực tiếp trên điện thoại (F8)">
+          <span class="tab-ico">🔇</span>
+          <span class="tab-txt">Tắt Âm PC</span>
+        </button>
+      </div>
+
       <!-- MASTER HERO BUTTON: BẮT ĐẦU / DỪNG LẠI (GLOWING CYBER BUTTON) -->
       <div class="master-action-zone">
         <button class="btn-hero-master" id="btnStartMirror" title="Nhấn để Chiếu & Điều khiển (Nhấn Alt đổi chuột)">
@@ -412,6 +424,21 @@
           </div>
         </div>
 
+        <!-- Cấu hình Truyền Âm Thanh Scrcpy -->
+        <div class="drawer-section">
+          <div class="drawer-section-title"><span>🔊 Âm Thanh Scrcpy Truyền PC:</span></div>
+          <div class="drawer-toggle-row">
+            <span>Truyền âm thanh điện thoại sang PC (F8):</span>
+            <label class="switch-toggle">
+              <input type="checkbox" id="chkForwardAudio" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+          <div class="drawer-hint" style="font-size: 8.5px; color: #94a3b8; line-height: 1.3; margin-top: 3px;">
+            Bật để nghe âm thanh game trên loa/tai nghe PC. Tắt để giữ âm thanh trên loa/tai nghe điện thoại (0ms trễ âm thanh).
+          </div>
+        </div>
+
         <!-- Game Booster & Tiện Ích VIP -->
         <div class="drawer-section">
           <div class="drawer-section-title"><span>🚀 Tăng Tốc & Tản Nhiệt:</span></div>
@@ -485,7 +512,6 @@
       <input type="checkbox" id="chkEnableControl" checked>
       <input type="checkbox" id="chkUhidInput" checked>
       <input type="checkbox" id="chkTurnScreenOff">
-      <input type="checkbox" id="chkForwardAudio" checked>
       <input type="checkbox" id="chkStayAwake" checked>
       <input type="checkbox" id="chkFullView">
       <select id="selFullViewMode"></select>

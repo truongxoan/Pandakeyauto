@@ -688,6 +688,61 @@ if (elBtnToggleMirrorOff) {
   });
 }
 
+// ================= 🔊 BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH =================
+const elBtnToggleAudioOn = document.getElementById('btnToggleAudioOn');
+const elBtnToggleAudioOff = document.getElementById('btnToggleAudioOff');
+
+function updateAudioVisuals(forwardAudio) {
+  const isAudio = (forwardAudio !== undefined) ? !!forwardAudio : (elChkForwardAudio ? elChkForwardAudio.checked : true);
+  if (elChkForwardAudio && elChkForwardAudio.checked !== isAudio) {
+    elChkForwardAudio.checked = isAudio;
+  }
+  const btnOn = document.getElementById('btnToggleAudioOn');
+  const btnOff = document.getElementById('btnToggleAudioOff');
+  if (btnOn) btnOn.classList.toggle('active', isAudio);
+  if (btnOff) btnOff.classList.toggle('active', !isAudio);
+}
+
+if (elBtnToggleAudioOn) {
+  elBtnToggleAudioOn.addEventListener('click', async () => {
+    if (elChkForwardAudio) elChkForwardAudio.checked = true;
+    if (activeMode) activeMode.forwardAudio = true;
+    updateAudioVisuals(true);
+    playSoundCue('mode');
+    updateFooterLog('🔊 Đã chọn: BẬT truyền âm thanh điện thoại sang máy tính (F8).');
+    if (window.api && window.api.toggleAudioForwarding) {
+      await window.api.toggleAudioForwarding(true);
+    } else if (isControlling) {
+      startCurrentControl();
+    }
+    if (typeof saveCurrentProfileDraft === 'function') saveCurrentProfileDraft();
+  });
+}
+
+if (elBtnToggleAudioOff) {
+  elBtnToggleAudioOff.addEventListener('click', async () => {
+    if (elChkForwardAudio) elChkForwardAudio.checked = false;
+    if (activeMode) activeMode.forwardAudio = false;
+    updateAudioVisuals(false);
+    playSoundCue('mode');
+    updateFooterLog('🔇 Đã chọn: TẮT truyền âm thanh - Nghe trực tiếp trên điện thoại (F8).');
+    if (window.api && window.api.toggleAudioForwarding) {
+      await window.api.toggleAudioForwarding(false);
+    } else if (isControlling) {
+      startCurrentControl();
+    }
+    if (typeof saveCurrentProfileDraft === 'function') saveCurrentProfileDraft();
+  });
+}
+
+if (window.api && window.api.onAudioForwardingChanged) {
+  window.api.onAudioForwardingChanged(({ forwardAudio }) => {
+    updateAudioVisuals(forwardAudio);
+    if (activeMode) activeMode.forwardAudio = forwardAudio;
+    updateFooterLog(forwardAudio ? '🔊 [F8] Đã BẬT truyền âm thanh sang máy tính' : '🔇 [F8] Đã TẮT truyền âm thanh sang máy tính');
+  });
+}
+
 // ⭐ FORM THÊM GAME MỚI
 if (elBtnToggleAddGame) {
   elBtnToggleAddGame.addEventListener('click', () => {
@@ -823,6 +878,7 @@ function updateModeDisplay() {
   if (elChkUhidInput && activeMode.uhidInput !== undefined) elChkUhidInput.checked = activeMode.uhidInput !== false;
   if (elChkTurnScreenOff && activeMode.turnScreenOff !== undefined) elChkTurnScreenOff.checked = !!activeMode.turnScreenOff;
   if (activeMode.forwardAudio !== undefined && elChkForwardAudio) elChkForwardAudio.checked = activeMode.forwardAudio;
+  updateAudioVisuals(activeMode.forwardAudio);
   if (activeMode.stayAwake !== undefined && elChkStayAwake) elChkStayAwake.checked = activeMode.stayAwake;
 }
 
@@ -2898,6 +2954,7 @@ window.addEventListener('DOMContentLoaded', () => {
   initSwitchKey();
   initGithubConfig();
   updateModeCardVisuals();
+  updateAudioVisuals();
   updateDeviceList();
   loadSavedWifiDevices();
   refreshBatteryStats();

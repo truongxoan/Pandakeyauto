@@ -79,6 +79,9 @@ powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Panda
 - **🛡️ VIP: Chế Độ Thi Đấu Tập Trung (Tournament Clutch Shield)**:
   - Tự động bật chế độ **Không làm phiền (Zen DND Mode)** và khóa xoay màn hình trên điện thoại qua ADB.
   - Chặn triệt để toàn bộ cuộc gọi đến, thông báo Zalo, Messenger, SMS làm giật lag máy hoặc che mất nút bấm lúc đang combat căng thẳng.
+- **🔊 VIP: Bật / Tắt Truyền Âm Thanh Qua Máy Tính (Phím F8)**:
+  - Công tắc chuyển đổi tức thì giữa: **Truyền âm thanh điện thoại sang loa/tai nghe PC** (độ trễ siêu thấp) hoặc **Không truyền âm thanh** (nghe trực tiếp trên điện thoại/tai nghe cắm điện thoại, triệt tiêu hoàn toàn delay).
+  - Tích hợp thanh gạt trực quan trên giao diện chính, công tắc trong Menu Cài đặt, phím nóng **F8** toàn cầu và bảng thông báo HUD OSD nổi trên màn hình game.
 - **📸 VIP: Chụp Ảnh Khoảnh Khắc Highlight (Phím F9)**:
   - Nhấn phím nóng **F9** toàn cầu để chụp ngay lập tức ảnh màn hình điện thoại chất lượng gốc lossless không viền.
   - Tự động lưu trữ và quản lý tập tin trong thư mục `Pictures\Pandakeyauto`, 1-click mở thư mục ảnh.

@@ -131,6 +131,11 @@ contextBridge.exposeInMainWorld('api', {
   setSelectedDevice: (deviceId) => ipcRenderer.invoke('set-selected-device', deviceId),
   pollHardwareStats: () => ipcRenderer.invoke('poll-hardware-stats'),
 
+  // 🔊 Audio Forwarding APIs (Bật/Tắt truyền âm thanh qua PC)
+  toggleAudioForwarding: (forceState) => ipcRenderer.invoke('toggle-audio-forwarding', forceState),
+  getAudioForwarding: () => ipcRenderer.invoke('get-audio-forwarding'),
+  onAudioForwardingChanged: (callback) => ipcRenderer.on('audio-forwarding-changed', (_event, value) => callback(value)),
+
   // Core Events
   onRequestStartControl: (callback) => ipcRenderer.on('request-start-control', () => callback()),
   onOtgLog: (callback) => ipcRenderer.on('otg-log', (_event, value) => callback(value)),
