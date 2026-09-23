@@ -110,6 +110,18 @@
         <button class="btn-micro-icon btn-wifi-quick" id="btnQuickWifiModal" title="Mở ô nhập địa chỉ IP Wi-Fi">📶</button>
       </div>
 
+      <!-- BỘ CHỌN KẾT NỐI: CỐ ĐỊNH CÁP USB HOẶC WI-FI (KHÓA CỨNG, KHÔNG TỰ NHẢY) -->
+      <div class="mirror-toggle-strip connection-toggle-strip" id="connToggleStrip" title="Chọn cố định kết nối Cáp USB hoặc Wi-Fi (Khóa cứng, không tự động chuyển đổi)">
+        <button type="button" class="strip-tab-btn active" id="btnLockConnUsb" title="Khóa cứng dùng Cáp USB (0ms lag, không tự động nhảy sang Wi-Fi)">
+          <span class="tab-ico">🔌</span>
+          <span class="tab-txt">Cố Định Cáp USB</span>
+        </button>
+        <button type="button" class="strip-tab-btn" id="btnLockConnWifi" title="Khóa cứng dùng Wi-Fi (Không dây, không tự động chuyển USB)">
+          <span class="tab-ico">📶</span>
+          <span class="tab-txt">Cố Định Wi-Fi</span>
+        </button>
+      </div>
+
       <!-- THANH 1-CLICK TỰ CẤU HÌNH WI-FI & RÚT CÁP USB (HOẶC MỞ Ô NHẬP IP) -->
       <div class="quick-wifi-entry-bar" id="quickWifiEntryBar" title="Cắm cáp USB + kết nối chung Wi-Fi/Hotspot: Bấm vào đây để tự động cấu hình và rút cáp USB ngay lập tức!">
         <span class="q-wifi-icon" id="qWifiIcon">⚡</span>

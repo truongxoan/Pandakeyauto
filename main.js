@@ -594,13 +594,23 @@ app.whenReady().then(() => {
   startGameDetectionPoller();
   startHardwareMonitorPoller();
 
-  // Tự động kết nối lại thiết bị Wi-Fi đã lưu nếu không có USB
+  // Tự động kết nối lại thiết bị Wi-Fi đã lưu chỉ khi không có USB và không ở chế độ cố định USB
   setTimeout(() => {
     try {
+      if (currentOptions && currentOptions.connectionMode === 'usb') return;
       const wifiCfg = getSavedWifiConfig();
       if (wifiCfg.autoReconnect && wifiCfg.lastConnected) {
         exec(`"${adbPath}" devices`, { windowsHide: true }, (err, stdout) => {
-          const hasConnectedDevice = (stdout || '').split('\n').slice(1).some(l => l.includes('\tdevice'));
+          const lines = (stdout || '').split('\n').slice(1);
+          const hasUsbDevice = lines.some(l => {
+            const parts = l.trim().split(/\s+/);
+            return parts.length >= 2 && parts[1] === 'device' && !parts[0].includes(':');
+          });
+          if (hasUsbDevice) {
+            sendLog('🔌 [Cố Định USB] Đã cắm cáp USB, bỏ qua tự kết nối Wi-Fi.');
+            return;
+          }
+          const hasConnectedDevice = lines.some(l => l.includes('\tdevice'));
           if (!hasConnectedDevice) {
             sendLog(`📶 [Auto-Connect] Đang thử kết nối lại thiết bị Wi-Fi đã lưu: ${wifiCfg.lastConnected}...`);
             exec(`"${adbPath}" connect ${wifiCfg.lastConnected}`, { windowsHide: true }, (err2, stdout2) => {
@@ -870,7 +880,7 @@ function checkAppleDevice() {
   });
 }
 
-// Lấy danh sách thiết bị
+// Lấy danh sách thiết bị (loại bỏ và dọn dẹp các thiết bị offline để chống nhảy loạn)
 ipcMain.handle('get-devices', async () => {
   return new Promise(async (resolve) => {
     const appleDevices = await checkAppleDevice();
@@ -884,10 +894,21 @@ ipcMain.handle('get-devices', async () => {
             const parts = line.split(/\s+/);
             const id = parts[0];
             const state = parts[1];
+            const isWifi = id.includes(':');
+            
+            // Nếu thiết bị Wi-Fi bị offline, tự ngắt kết nối để chống kẹt danh sách
+            if (state === 'offline') {
+              if (isWifi) {
+                try {
+                  exec(`"${adbPath}" disconnect ${id}`, { windowsHide: true }, () => {});
+                } catch (e) {}
+              }
+              continue; // Bỏ qua thiết bị offline
+            }
+            
             const modelMatch = line.match(/model:(\S+)/);
             const productMatch = line.match(/product:(\S+)/);
             const model = modelMatch ? modelMatch[1] : (productMatch ? productMatch[1] : 'Android Device');
-            const isWifi = id.includes(':');
             adbDevices.push({ id, state, model, isWifi, raw: line });
           }
         }
@@ -897,11 +918,38 @@ ipcMain.handle('get-devices', async () => {
   });
 });
 
-ipcMain.handle('set-selected-device', async (event, deviceId) => {
+ipcMain.handle('set-selected-device', async (event, deviceId, meta = {}) => {
   selectedAdbDeviceId = deviceId;
-  if (currentOptions) currentOptions.deviceId = deviceId;
+  if (currentOptions) {
+    currentOptions.deviceId = deviceId;
+    if (meta && meta.connectionMode) {
+      currentOptions.connectionMode = meta.connectionMode;
+    }
+  }
   queryHardwareStats();
   return { success: true };
+});
+
+// Ngắt toàn bộ kết nối Wi-Fi khi người dùng bấm Cố Định Cáp USB
+ipcMain.handle('disconnect-all-wifi', async () => {
+  return new Promise((resolve) => {
+    exec(`"${adbPath}" devices`, { windowsHide: true }, (err, stdout) => {
+      if (!err && stdout) {
+        const lines = stdout.trim().split('\n').slice(1);
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          const id = parts[0];
+          if (id && id.includes(':')) {
+            try {
+              exec(`"${adbPath}" disconnect ${id}`, { windowsHide: true }, () => {});
+              sendLog(`🔌 [Cố Định USB] Đã dọn dẹp kết nối Wi-Fi ${id} để chống xung đột với cáp USB.`);
+            } catch (e) {}
+          }
+        }
+      }
+      resolve({ success: true });
+    });
+  });
 });
 
 ipcMain.handle('poll-hardware-stats', async () => {
@@ -1846,8 +1894,8 @@ async function startControlInternal(options = {}) {
     // ⭐ Giữ điện thoại luôn thức và ngăn Android 14/15/16 tự ngắt kết nối USB khi đang chơi game
     try {
       exec(`"${adbPath}" -s "${targetDeviceId}" shell "svc power stayon true; settings put global stay_on_while_plugged_in 3"`, { windowsHide: true }, () => {});
-      // Chuẩn bị kết nối Wi-Fi ngầm dự phòng chống rớt cáp (chỉ khi đang dùng USB)
-      if (!targetDeviceId.includes(':')) {
+      // Chuẩn bị kết nối Wi-Fi ngầm dự phòng chống rớt cáp (chỉ khi đang dùng USB và KHÔNG khóa cứng USB)
+      if (!targetDeviceId.includes(':') && currentOptions.connectionMode !== 'usb') {
         exec(`"${adbPath}" -s "${targetDeviceId}" tcpip 5555`, { windowsHide: true }, () => {
           exec(`"${adbPath}" -s "${targetDeviceId}" shell "ip addr show wlan0 | grep 'inet '"`, { windowsHide: true }, (err, stdout) => {
             if (!err && stdout) {
@@ -2049,8 +2097,8 @@ async function startControlInternal(options = {}) {
             const devs = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
             if (targetDeviceId && devs.includes(targetDeviceId)) {
               canConnect = true;
-            } else if (savedWifiIp) {
-              // Thử nhảy sang IP Wi-Fi dự phòng khi rút cáp USB
+            } else if (savedWifiIp && currentOptions.connectionMode !== 'usb') {
+              // Thử nhảy sang IP Wi-Fi dự phòng khi rút cáp USB (chỉ khi không cố định USB)
               try {
                 execSync(`"${adbPath}" connect ${savedWifiIp}:5555`, { windowsHide: true });
                 currentOptions.deviceId = `${savedWifiIp}:5555`;

@@ -1377,6 +1377,28 @@ body.mini-app-body {
   text-shadow: 0 0 4px rgba(255, 71, 87, 0.8);
 }
 
+/* ================= 🔌 USB / WI-FI CONNECTION LOCK STRIP ================= */
+.connection-toggle-strip {
+  border-color: rgba(79, 172, 254, 0.25);
+  margin-bottom: 2px;
+}
+
+.strip-tab-btn.active#btnLockConnUsb {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.28), rgba(0, 150, 255, 0.38));
+  border-color: #00f2fe;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.45);
+  text-shadow: 0 0 4px rgba(0, 242, 254, 0.8);
+}
+
+.strip-tab-btn.active#btnLockConnWifi {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(192, 132, 252, 0.38));
+  border-color: #c084fc;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.45);
+  text-shadow: 0 0 4px rgba(168, 85, 247, 0.8);
+}
+
 /* Modal Popup Window */
 .wifi-modal-backdrop {
   position: absolute;

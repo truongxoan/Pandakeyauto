@@ -128,7 +128,8 @@ contextBridge.exposeInMainWorld('api', {
   closeTranslatorOverlay: () => ipcRenderer.invoke('close-translator-overlay'),
   setTranslatorConfig: (config) => ipcRenderer.invoke('set-translator-config', config),
 
-  setSelectedDevice: (deviceId) => ipcRenderer.invoke('set-selected-device', deviceId),
+  setSelectedDevice: (deviceId, meta) => ipcRenderer.invoke('set-selected-device', deviceId, meta),
+  disconnectAllWifi: () => ipcRenderer.invoke('disconnect-all-wifi'),
   pollHardwareStats: () => ipcRenderer.invoke('poll-hardware-stats'),
 
   // 🔊 Audio Forwarding APIs (Bật/Tắt truyền âm thanh qua PC)
