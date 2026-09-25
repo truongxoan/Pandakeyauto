@@ -1399,6 +1399,14 @@ body.mini-app-body {
   text-shadow: 0 0 4px rgba(168, 85, 247, 0.8);
 }
 
+.strip-tab-btn.active#btnLockConnAuto {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.28), rgba(0, 242, 254, 0.38));
+  border-color: #00ff88;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.45);
+  text-shadow: 0 0 4px rgba(0, 255, 136, 0.8);
+}
+
 /* Modal Popup Window */
 .wifi-modal-backdrop {
   position: absolute;

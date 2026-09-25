@@ -386,6 +386,7 @@ let lastDetectedPackage = '';
 let autoGamePoller = null;
 let hardwarePoller = null;
 let selectedAdbDeviceId = null;
+let globalConnectionLock = 'usb'; // 'usb' | 'wifi' | 'auto'
 
 // ================= 🔮 CHẾ ĐỘ QUẢ CẦU NỔI & ĐỘ TRONG SUỐT =================
 ipcMain.handle('toggle-orb-mode', () => {
@@ -498,15 +499,26 @@ function startGameDetectionPoller() {
 
 // ================= 📊 MINI HARDWARE & LATENCY MONITOR =================
 function resolveActiveAdbDevice() {
-  if (currentOptions && currentOptions.deviceId) return currentOptions.deviceId;
-  if (selectedAdbDeviceId) return selectedAdbDeviceId;
+  const isAllowed = (id) => {
+    if (!id) return false;
+    const isWifi = id.includes(':');
+    if (globalConnectionLock === 'usb' && isWifi) return false;
+    if (globalConnectionLock === 'wifi' && !isWifi) return false;
+    return true;
+  };
+
+  if (currentOptions && currentOptions.deviceId && isAllowed(currentOptions.deviceId)) return currentOptions.deviceId;
+  if (selectedAdbDeviceId && isAllowed(selectedAdbDeviceId)) return selectedAdbDeviceId;
   try {
     const devListStr = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
     const lines = devListStr.trim().split('\n').slice(1);
     for (const l of lines) {
       const parts = l.trim().split(/\s+/);
       if (parts.length >= 2 && parts[1] === 'device') {
-        return parts[0];
+        const id = parts[0];
+        if (isAllowed(id)) {
+          return id;
+        }
       }
     }
   } catch (e) {}
@@ -920,6 +932,9 @@ ipcMain.handle('get-devices', async () => {
 
 ipcMain.handle('set-selected-device', async (event, deviceId, meta = {}) => {
   selectedAdbDeviceId = deviceId;
+  if (meta && meta.connectionMode && ['usb', 'wifi', 'auto'].includes(meta.connectionMode)) {
+    globalConnectionLock = meta.connectionMode;
+  }
   if (currentOptions) {
     currentOptions.deviceId = deviceId;
     if (meta && meta.connectionMode) {
@@ -930,8 +945,29 @@ ipcMain.handle('set-selected-device', async (event, deviceId, meta = {}) => {
   return { success: true };
 });
 
-// Ngắt toàn bộ kết nối Wi-Fi khi người dùng bấm Cố Định Cáp USB
+ipcMain.handle('set-connection-lock-mode', async (event, mode) => {
+  if (['usb', 'wifi', 'auto'].includes(mode)) {
+    globalConnectionLock = mode;
+    if (currentOptions) {
+      currentOptions.connectionMode = mode;
+    }
+    if (mode === 'usb') {
+      savedWifiIp = null;
+    }
+    const modeName = mode === 'usb' ? 'KHÓA CÁP USB' : mode === 'wifi' ? 'KHÓA WI-FI' : 'TỰ ĐỘNG';
+    sendLog(`🔒 [Khóa Kết Nối] Đã chuyển sang chế độ: ${modeName}`);
+    return { success: true, mode: globalConnectionLock };
+  }
+  return { success: false, error: 'Chế độ kết nối không hợp lệ' };
+});
+
+ipcMain.handle('get-connection-lock-mode', async () => {
+  return { mode: globalConnectionLock };
+});
+
+// Ngắt toàn bộ kết nối Wi-Fi khi người dùng bấm Khóa Cáp USB
 ipcMain.handle('disconnect-all-wifi', async () => {
+  savedWifiIp = null;
   return new Promise((resolve) => {
     exec(`"${adbPath}" devices`, { windowsHide: true }, (err, stdout) => {
       if (!err && stdout) {
@@ -942,7 +978,7 @@ ipcMain.handle('disconnect-all-wifi', async () => {
           if (id && id.includes(':')) {
             try {
               exec(`"${adbPath}" disconnect ${id}`, { windowsHide: true }, () => {});
-              sendLog(`🔌 [Cố Định USB] Đã dọn dẹp kết nối Wi-Fi ${id} để chống xung đột với cáp USB.`);
+              sendLog(`🔌 [Khóa Cáp USB] Đã dọn dẹp kết nối Wi-Fi ${id} để chống xung đột với cáp USB.`);
             } catch (e) {}
           }
         }
@@ -1881,12 +1917,24 @@ async function startControlInternal(options = {}) {
   // ⭐ Dùng RCtrl cho phím tắt Scrcpy để KHÔNG xung đột với Alt/Ctrl của Pandakeyauto
   args.push('--shortcut-mod=rctrl');
 
+  if (currentOptions.connectionMode && ['usb', 'wifi', 'auto'].includes(currentOptions.connectionMode)) {
+    globalConnectionLock = currentOptions.connectionMode;
+  }
+
   let targetDeviceId = deviceId || selectedAdbDeviceId;
   if (!targetDeviceId) {
     targetDeviceId = resolveActiveAdbDevice();
   }
 
   if (targetDeviceId) {
+    const isWifiDev = targetDeviceId.includes(':');
+    if (globalConnectionLock === 'usb' && isWifiDev) {
+      throw new Error(`Đang ở chế độ KHÓA CỨNG CÁP USB: Không cho phép kết nối qua Wi-Fi (${targetDeviceId}). Vui lòng cắm cáp USB.`);
+    }
+    if (globalConnectionLock === 'wifi' && !isWifiDev) {
+      throw new Error(`Đang ở chế độ KHÓA CỨNG WI-FI: Không cho phép kết nối qua Cáp USB (${targetDeviceId}). Vui lòng kết nối Wi-Fi.`);
+    }
+
     selectedAdbDeviceId = targetDeviceId;
     currentOptions.deviceId = targetDeviceId;
     queryHardwareStats();
@@ -1894,8 +1942,8 @@ async function startControlInternal(options = {}) {
     // ⭐ Giữ điện thoại luôn thức và ngăn Android 14/15/16 tự ngắt kết nối USB khi đang chơi game
     try {
       exec(`"${adbPath}" -s "${targetDeviceId}" shell "svc power stayon true; settings put global stay_on_while_plugged_in 3"`, { windowsHide: true }, () => {});
-      // Chuẩn bị kết nối Wi-Fi ngầm dự phòng chống rớt cáp (chỉ khi đang dùng USB và KHÔNG khóa cứng USB)
-      if (!targetDeviceId.includes(':') && currentOptions.connectionMode !== 'usb') {
+      // CHỈ Chuẩn bị kết nối Wi-Fi ngầm dự phòng khi ở chế độ TỰ ĐỘNG (auto) và đang dùng cáp USB
+      if (!isWifiDev && globalConnectionLock === 'auto') {
         exec(`"${adbPath}" -s "${targetDeviceId}" tcpip 5555`, { windowsHide: true }, () => {
           exec(`"${adbPath}" -s "${targetDeviceId}" shell "ip addr show wlan0 | grep 'inet '"`, { windowsHide: true }, (err, stdout) => {
             if (!err && stdout) {
@@ -1907,8 +1955,18 @@ async function startControlInternal(options = {}) {
             }
           });
         });
+      } else {
+        savedWifiIp = null;
       }
     } catch (e) {}
+  } else {
+    if (globalConnectionLock === 'usb') {
+      throw new Error('Đang ở chế độ KHÓA CỨNG CÁP USB: Chưa phát hiện điện thoại cắm cáp USB. Vui lòng cắm cáp và bật Gỡ lỗi USB.');
+    } else if (globalConnectionLock === 'wifi') {
+      throw new Error('Đang ở chế độ KHÓA CỨNG WI-FI: Chưa phát hiện kết nối Wi-Fi nào. Vui lòng kết nối Wi-Fi.');
+    } else {
+      throw new Error('Chưa phát hiện thiết bị Android nào kết nối qua USB hoặc Wi-Fi.');
+    }
   }
 
   if (mirrorScreen) {
@@ -2095,16 +2153,54 @@ async function startControlInternal(options = {}) {
           let canConnect = false;
           try {
             const devs = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
-            if (targetDeviceId && devs.includes(targetDeviceId)) {
-              canConnect = true;
-            } else if (savedWifiIp && currentOptions.connectionMode !== 'usb') {
-              // Thử nhảy sang IP Wi-Fi dự phòng khi rút cáp USB (chỉ khi không cố định USB)
-              try {
-                execSync(`"${adbPath}" connect ${savedWifiIp}:5555`, { windowsHide: true });
-                currentOptions.deviceId = `${savedWifiIp}:5555`;
+            if (globalConnectionLock === 'usb') {
+              // KHÓA CỨNG USB: Tuyệt đối không nhảy sang Wi-Fi
+              if (targetDeviceId && devs.includes(targetDeviceId) && !devs.includes(`${targetDeviceId}\toffline`) && !targetDeviceId.includes(':')) {
                 canConnect = true;
-                sendLog(`📶 [Wi-Fi Failover] Đã tự động kết nối Wi-Fi ${savedWifiIp}:5555 để tiếp tục trận đấu!`);
-              } catch (e) {}
+              } else {
+                // Quét xem có cổng cáp USB nào vừa cắm lại không
+                const lines = devs.trim().split('\n').slice(1);
+                for (const l of lines) {
+                  const parts = l.trim().split(/\s+/);
+                  if (parts.length >= 2 && parts[1] === 'device' && !parts[0].includes(':')) {
+                    targetDeviceId = parts[0];
+                    currentOptions.deviceId = parts[0];
+                    selectedAdbDeviceId = parts[0];
+                    canConnect = true;
+                    sendLog(`🔌 [Khóa Cáp USB] Đã nhận lại cáp USB ${targetDeviceId}!`);
+                    break;
+                  }
+                }
+              }
+            } else if (globalConnectionLock === 'wifi') {
+              // KHÓA CỨNG WI-FI: Tuyệt đối không nhảy sang cáp USB
+              if (targetDeviceId && devs.includes(targetDeviceId) && !devs.includes(`${targetDeviceId}\toffline`) && targetDeviceId.includes(':')) {
+                canConnect = true;
+              } else if (targetDeviceId && targetDeviceId.includes(':')) {
+                // Thử kết nối lại địa chỉ IP Wi-Fi
+                try {
+                  execSync(`"${adbPath}" connect ${targetDeviceId}`, { windowsHide: true });
+                  const reDevs = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
+                  if (reDevs.includes(targetDeviceId) && !reDevs.includes(`${targetDeviceId}\toffline`)) {
+                    canConnect = true;
+                    sendLog(`📶 [Khóa Wi-Fi] Đã kết nối lại Wi-Fi ${targetDeviceId}!`);
+                  }
+                } catch (e) {}
+              }
+            } else {
+              // CHẾ ĐỘ TỰ ĐỘNG (AUTO):
+              if (targetDeviceId && devs.includes(targetDeviceId) && !devs.includes(`${targetDeviceId}\toffline`)) {
+                canConnect = true;
+              } else if (savedWifiIp) {
+                try {
+                  execSync(`"${adbPath}" connect ${savedWifiIp}:5555`, { windowsHide: true });
+                  currentOptions.deviceId = `${savedWifiIp}:5555`;
+                  targetDeviceId = `${savedWifiIp}:5555`;
+                  selectedAdbDeviceId = targetDeviceId;
+                  canConnect = true;
+                  sendLog(`📶 [Wi-Fi Failover] Đã tự động kết nối Wi-Fi ${savedWifiIp}:5555 để tiếp tục trận đấu!`);
+                } catch (e) {}
+              }
             }
           } catch (e) {}
 

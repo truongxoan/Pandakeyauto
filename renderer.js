@@ -327,14 +327,19 @@ function updateQuickWifiEntryBarUI(isWifi = false, noDevice = false) {
 
 function updateConnectionModeVisuals() {
   const isUsb = preferredConnectionMode === 'usb';
+  const isWifi = preferredConnectionMode === 'wifi';
+  const isAuto = preferredConnectionMode === 'auto';
   const btnUsb = document.getElementById('btnLockConnUsb');
   const btnWifi = document.getElementById('btnLockConnWifi');
+  const btnAuto = document.getElementById('btnLockConnAuto');
   if (btnUsb) btnUsb.classList.toggle('active', isUsb);
-  if (btnWifi) btnWifi.classList.toggle('active', !isUsb);
+  if (btnWifi) btnWifi.classList.toggle('active', isWifi);
+  if (btnAuto) btnAuto.classList.toggle('active', isAuto);
 }
 
 const elBtnLockConnUsb = document.getElementById('btnLockConnUsb');
 const elBtnLockConnWifi = document.getElementById('btnLockConnWifi');
+const elBtnLockConnAuto = document.getElementById('btnLockConnAuto');
 
 if (elBtnLockConnUsb) {
   elBtnLockConnUsb.addEventListener('click', async () => {
@@ -342,8 +347,11 @@ if (elBtnLockConnUsb) {
     localStorage.setItem('pandakey_pref_conn_mode', 'usb');
     updateConnectionModeVisuals();
     playSoundCue('mode');
-    updateFooterLog('🔌 Đang khóa cứng kết nối Cáp USB (dọn dẹp kết nối Wi-Fi)...');
+    updateFooterLog('🔒 Đang khóa cứng kết nối Cáp USB (dọn dẹp kết nối Wi-Fi)...');
 
+    if (window.api && window.api.setConnectionLockMode) {
+      await window.api.setConnectionLockMode('usb');
+    }
     // Ngắt toàn bộ kết nối Wi-Fi để dứt điểm hiện tượng nhảy loạn qua lại
     if (window.api && window.api.disconnectAllWifi) {
       await window.api.disconnectAllWifi();
@@ -357,12 +365,12 @@ if (elBtnLockConnUsb) {
       if (window.api && window.api.setSelectedDevice) {
         await window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'usb' });
       }
-      updateFooterLog(`🔌 Đã KHÓA CỨNG Cáp USB: ${currentDeviceId} (0ms lag, không tự nhảy sang Wi-Fi)`);
+      updateFooterLog(`🔒 [ĐÃ KHÓA CỨNG USB] ${currentDeviceId} (0ms lag, tuyệt đối không nhảy Wi-Fi)`);
       if (isControlling) {
         startCurrentControl();
       }
     } else {
-      updateFooterLog('⚠️ Chưa phát hiện thiết bị cắm cáp USB. Hãy cắm cáp và bật Gỡ lỗi USB trên điện thoại.');
+      updateFooterLog('⚠️ Đang khóa Cáp USB: Vui lòng cắm cáp USB và bật Gỡ lỗi USB trên điện thoại.');
     }
   });
 }
@@ -374,6 +382,10 @@ if (elBtnLockConnWifi) {
     updateConnectionModeVisuals();
     playSoundCue('mode');
 
+    if (window.api && window.api.setConnectionLockMode) {
+      await window.api.setConnectionLockMode('wifi');
+    }
+
     await updateDeviceList();
 
     const isWifi = currentDeviceId && currentDeviceId.includes(':');
@@ -383,13 +395,42 @@ if (elBtnLockConnWifi) {
       if (window.api && window.api.setSelectedDevice) {
         await window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'wifi' });
       }
-      updateFooterLog(`📶 Đã KHÓA CỨNG Wi-Fi: ${currentDeviceId}`);
+      updateFooterLog(`🔒 [ĐÃ KHÓA CỨNG WI-FI] ${currentDeviceId} (Không dây, không nhảy USB kể cả khi cắm sạc)`);
       if (isControlling) {
         startCurrentControl();
       }
     } else {
-      updateFooterLog('📶 Chưa có thiết bị Wi-Fi nào kết nối. Đang mở hộp thoại kết nối Wi-Fi...');
+      updateFooterLog('📶 Đang khóa Wi-Fi: Chưa có thiết bị Wi-Fi nào kết nối. Đang mở hộp thoại...');
       openWifiModal();
+    }
+  });
+}
+
+if (elBtnLockConnAuto) {
+  elBtnLockConnAuto.addEventListener('click', async () => {
+    preferredConnectionMode = 'auto';
+    localStorage.setItem('pandakey_pref_conn_mode', 'auto');
+    updateConnectionModeVisuals();
+    playSoundCue('mode');
+
+    if (window.api && window.api.setConnectionLockMode) {
+      await window.api.setConnectionLockMode('auto');
+    }
+
+    await updateDeviceList();
+
+    if (currentDeviceId) {
+      lockedDeviceId = currentDeviceId;
+      localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+      if (window.api && window.api.setSelectedDevice) {
+        await window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'auto' });
+      }
+      updateFooterLog(`⚡ [TỰ ĐỘNG LINH HOẠT] Đã chọn ${currentDeviceId} (Ưu tiên USB, rút cáp tự sang Wi-Fi)`);
+      if (isControlling) {
+        startCurrentControl();
+      }
+    } else {
+      updateFooterLog('⚡ [Tự Động] Vui lòng cắm cáp USB hoặc kết nối Wi-Fi với điện thoại.');
     }
   });
 }
@@ -402,81 +443,116 @@ async function updateDeviceList() {
     // Lọc bỏ triệt để các thiết bị offline
     devices = devices.filter(d => d.state !== 'offline');
 
-    if (devices.length > 0) {
-      // Sắp xếp danh sách thiết bị ổn định theo lựa chọn cố định (Cáp USB hay Wi-Fi)
-      devices.sort((a, b) => {
-        if (preferredConnectionMode === 'usb') {
-          if (!a.isWifi && b.isWifi) return -1;
-          if (a.isWifi && !b.isWifi) return 1;
-        } else if (preferredConnectionMode === 'wifi') {
-          if (a.isWifi && !b.isWifi) return -1;
-          if (!a.isWifi && b.isWifi) return 1;
-        }
-        return a.id.localeCompare(b.id);
-      });
+    let matchedDev = null;
 
-      // Xác định thiết bị mục tiêu theo đúng chế độ đã khóa cứng ("cứng")
-      let matchedDev = null;
-      if (preferredConnectionMode === 'usb') {
-        // Ưu tiên cao nhất: Tìm thiết bị cắm cáp USB
+    if (preferredConnectionMode === 'usb') {
+      // 1. KHÓA CỨNG CÁP USB: CHỈ chọn thiết bị Cáp USB (!d.isWifi)
+      const usbDevices = devices.filter(d => !d.isWifi);
+      if (usbDevices.length > 0) {
         if (lockedDeviceId && !lockedDeviceId.includes(':')) {
-          matchedDev = devices.find(d => d.id === lockedDeviceId && !d.isWifi);
+          matchedDev = usbDevices.find(d => d.id === lockedDeviceId);
         }
         if (!matchedDev) {
-          matchedDev = devices.find(d => !d.isWifi);
+          matchedDev = usbDevices[0];
         }
-        if (!matchedDev) {
-          matchedDev = devices[0];
-        }
+        currentDeviceId = matchedDev.id;
+        lockedDeviceId = currentDeviceId;
+        localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
       } else {
-        // Chế độ Wi-Fi: Ưu tiên thiết bị Wi-Fi
+        // KHÔNG có USB nào: Tuyệt đối KHÔNG gán Wi-Fi device!
+        currentDeviceId = null;
+      }
+    } else if (preferredConnectionMode === 'wifi') {
+      // 2. KHÓA CỨNG WI-FI: CHỈ chọn thiết bị Wi-Fi (d.isWifi)
+      const wifiDevices = devices.filter(d => d.isWifi);
+      if (wifiDevices.length > 0) {
         if (lockedDeviceId && lockedDeviceId.includes(':')) {
-          matchedDev = devices.find(d => d.id === lockedDeviceId && d.isWifi);
+          matchedDev = wifiDevices.find(d => d.id === lockedDeviceId);
         }
         if (!matchedDev) {
-          matchedDev = devices.find(d => d.isWifi);
+          matchedDev = wifiDevices[0];
         }
-        if (!matchedDev) {
-          matchedDev = devices[0];
+        currentDeviceId = matchedDev.id;
+        lockedDeviceId = currentDeviceId;
+        localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+      } else {
+        // KHÔNG có Wi-Fi nào: Tuyệt đối KHÔNG gán USB device (kể cả khi cắm cáp sạc)!
+        currentDeviceId = null;
+      }
+    } else {
+      // 3. TỰ ĐỘNG LINH HOẠT: Ưu tiên USB, nếu không có thì lấy Wi-Fi
+      const usbDevices = devices.filter(d => !d.isWifi);
+      const wifiDevices = devices.filter(d => d.isWifi);
+      if (usbDevices.length > 0) {
+        if (lockedDeviceId && !lockedDeviceId.includes(':')) {
+          matchedDev = usbDevices.find(d => d.id === lockedDeviceId);
+        }
+        if (!matchedDev) matchedDev = usbDevices[0];
+      } else if (wifiDevices.length > 0) {
+        if (lockedDeviceId && lockedDeviceId.includes(':')) {
+          matchedDev = wifiDevices.find(d => d.id === lockedDeviceId);
+        }
+        if (!matchedDev) matchedDev = wifiDevices[0];
+      }
+      if (matchedDev) {
+        currentDeviceId = matchedDev.id;
+        lockedDeviceId = currentDeviceId;
+        localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+      } else {
+        currentDeviceId = null;
+      }
+    }
+
+    // Cập nhật dropdown thiết bị
+    if (elSelDeviceList) {
+      if (devices.length === 0) {
+        elSelDeviceList.innerHTML = '<option value="">Chưa có thiết bị nào</option>';
+      } else {
+        let waitingPrompt = '';
+        if (preferredConnectionMode === 'usb') waitingPrompt = '🔒 [Khóa USB] Đang chờ cắm cáp USB...';
+        else if (preferredConnectionMode === 'wifi') waitingPrompt = '🔒 [Khóa Wi-Fi] Đang chờ kết nối Wi-Fi...';
+        else waitingPrompt = '⚡ [Tự Động] Đang chờ thiết bị...';
+
+        let optionsHtml = '';
+        if (!currentDeviceId) {
+          optionsHtml += `<option value="" selected>${waitingPrompt}</option>`;
+        }
+
+        optionsHtml += devices.map(dev => {
+          let typeDesc = dev.isWifi ? 'Wi-Fi' : 'Cáp USB';
+          if (preferredConnectionMode === 'usb' && dev.isWifi) {
+            typeDesc = 'Wi-Fi - Bị Khóa USB';
+          } else if (preferredConnectionMode === 'wifi' && !dev.isWifi) {
+            typeDesc = 'Cáp USB - Bị Khóa Wi-Fi';
+          }
+          const statusSuffix = dev.state === 'unauthorized' ? ' [⚠️ Chưa cấp quyền]' : '';
+          const isSelected = (currentDeviceId && dev.id === currentDeviceId) ? 'selected' : '';
+          return `<option value="${dev.id}" ${isSelected}>${dev.model || 'Điện thoại'} (${typeDesc})${statusSuffix}</option>`;
+        }).join('');
+
+        elSelDeviceList.innerHTML = optionsHtml;
+        if (currentDeviceId) {
+          elSelDeviceList.value = currentDeviceId;
         }
       }
+    }
 
-      currentDeviceId = matchedDev ? matchedDev.id : devices[0].id;
-      lockedDeviceId = currentDeviceId;
-
-      // Cập nhật dropdown thiết bị chỉ khi danh sách ID thay đổi để chống giật nháy
-      if (elSelDeviceList) {
-        const existingIds = Array.from(elSelDeviceList.options).map(o => o.value).join(',');
-        const newIds = devices.map(d => d.id).join(',');
-        if (existingIds !== newIds || elSelDeviceList.options.length === 0) {
-          elSelDeviceList.innerHTML = '';
-          devices.forEach(dev => {
-            const opt = document.createElement('option');
-            opt.value = dev.id;
-            const statusSuffix = dev.state === 'unauthorized' ? ' [⚠️ Chưa cấp quyền]' : '';
-            opt.textContent = `${dev.model || 'Điện thoại'} (${dev.isWifi ? 'Wi-Fi' : 'Cáp USB'})${statusSuffix}`;
-            elSelDeviceList.appendChild(opt);
-          });
-        }
-        elSelDeviceList.value = currentDeviceId;
-      }
-
+    if (currentDeviceId) {
       if (window.api && window.api.setSelectedDevice) {
         window.api.setSelectedDevice(currentDeviceId, { connectionMode: preferredConnectionMode });
       }
 
-      const isWifiDev = currentDeviceId && currentDeviceId.includes(':');
-      const activeDev = devices.find(d => d.id === currentDeviceId) || devices[0];
-      const typeLabel = activeDev.isWifi ? 'Wi-Fi' : 'Cáp USB';
+      const activeDev = devices.find(d => d.id === currentDeviceId) || { id: currentDeviceId, isWifi: currentDeviceId.includes(':') };
+      const isWifiDev = activeDev.isWifi;
+      const modeTag = preferredConnectionMode === 'usb' ? '🔒 Đã Khóa USB' : preferredConnectionMode === 'wifi' ? '🔒 Đã Khóa Wi-Fi' : '⚡ Tự Động';
+
       if (activeDev.state === 'unauthorized') {
         elDeviceText.textContent = `${activeDev.model || 'Điện thoại'} (⚠️ Cần bấm "Cho phép" trên màn hình)`;
         elStatusDot.className = 'dot';
       } else {
-        elDeviceText.textContent = `${activeDev.model || 'Điện thoại'} (${typeLabel}) - Sẵn sàng`;
+        elDeviceText.textContent = `${activeDev.model || 'Điện thoại'} (${isWifiDev ? 'Wi-Fi' : 'Cáp USB'}) - ${modeTag}`;
         elStatusDot.className = 'dot connected';
       }
-
-      updateConnectionModeVisuals();
 
       // Cập nhật trạng thái Wi-Fi Hub
       const elLblWifiBadge = document.getElementById('lblWifiBadge');
@@ -485,7 +561,7 @@ async function updateDeviceList() {
           elLblWifiBadge.textContent = 'Đã kết nối';
           elLblWifiBadge.style.color = '#00ff88';
         } else {
-          elLblWifiBadge.textContent = currentDeviceId ? 'USB' : 'Chưa nối';
+          elLblWifiBadge.textContent = 'Cáp USB';
           elLblWifiBadge.style.color = '';
         }
       }
@@ -497,12 +573,15 @@ async function updateDeviceList() {
       }
       updateQuickWifiEntryBarUI(isWifiDev, false);
     } else {
-      currentDeviceId = null;
-      if (elSelDeviceList) {
-        elSelDeviceList.innerHTML = '<option value="">Chưa có thiết bị</option>';
-      }
+      // Khi không có thiết bị phù hợp với chế độ khóa
       elStatusDot.className = 'dot';
-      elDeviceText.textContent = 'Chưa cắm điện thoại qua USB';
+      if (preferredConnectionMode === 'usb') {
+        elDeviceText.textContent = '🔒 Đang khóa Cáp USB: Vui lòng cắm cáp USB vào máy tính';
+      } else if (preferredConnectionMode === 'wifi') {
+        elDeviceText.textContent = '🔒 Đang khóa Wi-Fi: Chưa kết nối điện thoại qua Wi-Fi';
+      } else {
+        elDeviceText.textContent = 'Chưa cắm điện thoại qua USB hoặc kết nối Wi-Fi';
+      }
       const elLblWifiBadge = document.getElementById('lblWifiBadge');
       if (elLblWifiBadge) {
         elLblWifiBadge.textContent = 'Chưa nối';
@@ -511,8 +590,9 @@ async function updateDeviceList() {
       const diag = document.getElementById('wifiDiagnosticsBar');
       if (diag) diag.style.display = 'none';
       updateQuickWifiEntryBarUI(false, true);
-      updateConnectionModeVisuals();
     }
+
+    updateConnectionModeVisuals();
   } catch (err) {
     updateFooterLog(`Lỗi kiểm tra thiết bị: ${err.message}`);
   }
@@ -520,15 +600,34 @@ async function updateDeviceList() {
 
 if (elSelDeviceList) {
   elSelDeviceList.addEventListener('change', async () => {
-    currentDeviceId = elSelDeviceList.value;
-    const isWifi = currentDeviceId && currentDeviceId.includes(':');
-    preferredConnectionMode = isWifi ? 'wifi' : 'usb';
-    localStorage.setItem('pandakey_pref_conn_mode', preferredConnectionMode);
+    const chosenId = elSelDeviceList.value;
+    if (!chosenId) return;
+
+    currentDeviceId = chosenId;
+    const isWifi = currentDeviceId.includes(':');
+
+    // Nếu người dùng chủ động chọn thiết bị khác kiểu kết nối hiện tại -> Cập nhật chế độ tương ứng
+    if (isWifi && preferredConnectionMode === 'usb') {
+      preferredConnectionMode = 'wifi';
+      localStorage.setItem('pandakey_pref_conn_mode', 'wifi');
+      if (window.api && window.api.setConnectionLockMode) {
+        await window.api.setConnectionLockMode('wifi');
+      }
+    } else if (!isWifi && preferredConnectionMode === 'wifi') {
+      preferredConnectionMode = 'usb';
+      localStorage.setItem('pandakey_pref_conn_mode', 'usb');
+      if (window.api && window.api.setConnectionLockMode) {
+        await window.api.setConnectionLockMode('usb');
+      }
+    }
+
     lockedDeviceId = currentDeviceId;
     localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
     updateConnectionModeVisuals();
 
-    updateFooterLog(`🔒 [Khóa Cứng] Đã cố định thiết bị: ${currentDeviceId} (${isWifi ? 'Wi-Fi' : 'Cáp USB'})`);
+    const modeName = preferredConnectionMode === 'usb' ? 'Khóa Cáp USB' : preferredConnectionMode === 'wifi' ? 'Khóa Wi-Fi' : 'Tự Động';
+    updateFooterLog(`🔒 [Đã Cố Định] Thiết bị: ${currentDeviceId} (${modeName})`);
+
     if (window.api && window.api.setSelectedDevice) {
       await window.api.setSelectedDevice(currentDeviceId, { connectionMode: preferredConnectionMode });
     }
@@ -564,11 +663,21 @@ async function startCurrentControl() {
       currentDeviceId = elSelDeviceList.value;
     }
     if (!currentDeviceId) {
-      const res = await window.api.getDevices();
-      if (res.success && res.devices.length > 0) {
-        const readyDev = res.devices.find(d => d.state === 'device') || res.devices[0];
-        currentDeviceId = readyDev.id;
-        if (elSelDeviceList) elSelDeviceList.value = currentDeviceId;
+      await updateDeviceList();
+    }
+
+    if (preferredConnectionMode === 'usb') {
+      if (!currentDeviceId || currentDeviceId.includes(':')) {
+        alert('⚠️ Đang ở chế độ KHÓA CỨNG CÁP USB!\n\nVui lòng cắm cáp USB vào máy tính và bật "Gỡ lỗi USB" trên điện thoại để bắt đầu điều khiển (hoặc bấm nút "Khóa Wi-Fi" / "Tự Động" nếu muốn dùng không dây).');
+        updateFooterLog('⚠️ Đang khóa Cáp USB: Vui lòng cắm cáp USB vào máy tính!');
+        return;
+      }
+    } else if (preferredConnectionMode === 'wifi') {
+      if (!currentDeviceId || !currentDeviceId.includes(':')) {
+        alert('⚠️ Đang ở chế độ KHÓA CỨNG WI-FI!\n\nChưa có kết nối Wi-Fi nào. Vui lòng kết nối Wi-Fi để bắt đầu điều khiển (hoặc bấm nút "Khóa Cáp USB" nếu muốn dùng dây cáp).');
+        updateFooterLog('⚠️ Đang khóa Wi-Fi: Chưa có thiết bị Wi-Fi kết nối!');
+        openWifiModal();
+        return;
       }
     }
 
@@ -582,6 +691,7 @@ async function startCurrentControl() {
     const isMirror = elRadModeBlackTab ? !elRadModeBlackTab.checked : true;
     const options = {
       deviceId: currentDeviceId,
+      connectionMode: preferredConnectionMode,
       codec: (elSelCodec && elSelCodec.value) || 'h264',
       fps: parseInt(elSelFps ? elSelFps.value : '60') || 60,
       displayBuffer: parseInt(elSelDisplayBuffer ? elSelDisplayBuffer.value : '10') || 10,
@@ -2714,9 +2824,17 @@ async function handleOneClickWifiAutoConfig() {
     const res = await window.api.activateWirelessAdb({ deviceId: currentDeviceId });
     if (res && res.success) {
       currentDeviceId = res.targetId || `${res.ip}:5555`;
-      if (window.api && window.api.setSelectedDevice) {
-        window.api.setSelectedDevice(currentDeviceId);
+      preferredConnectionMode = 'wifi';
+      localStorage.setItem('pandakey_pref_conn_mode', 'wifi');
+      lockedDeviceId = currentDeviceId;
+      localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+      if (window.api && window.api.setConnectionLockMode) {
+        await window.api.setConnectionLockMode('wifi');
       }
+      if (window.api && window.api.setSelectedDevice) {
+        await window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'wifi' });
+      }
+      updateConnectionModeVisuals();
       updateFooterLog(`✅ ${res.message}`);
       playSoundCue('activate');
       await loadSavedWifiDevices();
@@ -2771,9 +2889,17 @@ if (elModalBtnConnectWifi) {
       const res = await window.api.connectWirelessAdb({ ip, port });
       if (res && res.success) {
         currentDeviceId = res.targetId || `${ip}:${port}`;
-        if (window.api && window.api.setSelectedDevice) {
-          window.api.setSelectedDevice(currentDeviceId);
+        preferredConnectionMode = 'wifi';
+        localStorage.setItem('pandakey_pref_conn_mode', 'wifi');
+        lockedDeviceId = currentDeviceId;
+        localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+        if (window.api && window.api.setConnectionLockMode) {
+          await window.api.setConnectionLockMode('wifi');
         }
+        if (window.api && window.api.setSelectedDevice) {
+          window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'wifi' });
+        }
+        updateConnectionModeVisuals();
         updateFooterLog(`✅ ${res.message}`);
         closeWifiModal();
         await loadSavedWifiDevices();
@@ -2869,6 +2995,18 @@ if (elBtnConnectWifiDirect) {
     try {
       const res = await window.api.connectWirelessAdb({ ip, port, deviceId: currentDeviceId });
       if (res && res.success) {
+        currentDeviceId = res.targetId || `${ip}:${port}`;
+        preferredConnectionMode = 'wifi';
+        localStorage.setItem('pandakey_pref_conn_mode', 'wifi');
+        lockedDeviceId = currentDeviceId;
+        localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+        if (window.api && window.api.setConnectionLockMode) {
+          await window.api.setConnectionLockMode('wifi');
+        }
+        if (window.api && window.api.setSelectedDevice) {
+          window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'wifi' });
+        }
+        updateConnectionModeVisuals();
         updateFooterLog(`✅ ${res.message}`);
         await loadSavedWifiDevices();
         await updateDeviceList();
@@ -2990,9 +3128,17 @@ function renderSavedWifiChips(devices) {
           const res = await window.api.connectWirelessAdb({ ip: dev.ip, port: dev.port || 5555 });
           if (res && res.success) {
             currentDeviceId = res.targetId || `${dev.ip}:${dev.port || 5555}`;
-            if (window.api && window.api.setSelectedDevice) {
-              window.api.setSelectedDevice(currentDeviceId);
+            preferredConnectionMode = 'wifi';
+            localStorage.setItem('pandakey_pref_conn_mode', 'wifi');
+            lockedDeviceId = currentDeviceId;
+            localStorage.setItem('pandakey_locked_device_id', currentDeviceId);
+            if (window.api && window.api.setConnectionLockMode) {
+              await window.api.setConnectionLockMode('wifi');
             }
+            if (window.api && window.api.setSelectedDevice) {
+              window.api.setSelectedDevice(currentDeviceId, { connectionMode: 'wifi' });
+            }
+            updateConnectionModeVisuals();
             updateFooterLog(`✅ Đã kết nối tới ${dev.ip}:${dev.port || 5555}`);
             await updateDeviceList();
             if (elSelDeviceList) elSelDeviceList.value = currentDeviceId;
@@ -3082,6 +3228,9 @@ window.addEventListener('DOMContentLoaded', () => {
   updateModeCardVisuals();
   updateAudioVisuals();
   updateConnectionModeVisuals();
+  if (window.api && window.api.setConnectionLockMode) {
+    window.api.setConnectionLockMode(preferredConnectionMode);
+  }
   updateDeviceList();
   loadSavedWifiDevices();
   refreshBatteryStats();

@@ -110,15 +110,19 @@
         <button class="btn-micro-icon btn-wifi-quick" id="btnQuickWifiModal" title="Mở ô nhập địa chỉ IP Wi-Fi">📶</button>
       </div>
 
-      <!-- BỘ CHỌN KẾT NỐI: CỐ ĐỊNH CÁP USB HOẶC WI-FI (KHÓA CỨNG, KHÔNG TỰ NHẢY) -->
-      <div class="mirror-toggle-strip connection-toggle-strip" id="connToggleStrip" title="Chọn cố định kết nối Cáp USB hoặc Wi-Fi (Khóa cứng, không tự động chuyển đổi)">
-        <button type="button" class="strip-tab-btn active" id="btnLockConnUsb" title="Khóa cứng dùng Cáp USB (0ms lag, không tự động nhảy sang Wi-Fi)">
-          <span class="tab-ico">🔌</span>
-          <span class="tab-txt">Cố Định Cáp USB</span>
+      <!-- BỘ CHỌN KẾT NỐI: KHÓA CỨNG CÁP USB / KHÓA WI-FI / TỰ ĐỘNG -->
+      <div class="mirror-toggle-strip connection-toggle-strip" id="connToggleStrip" title="Tùy chọn kết nối: Khóa cứng Cáp USB, Khóa cứng Wi-Fi hoặc Tự động chuyển đổi">
+        <button type="button" class="strip-tab-btn active" id="btnLockConnUsb" title="Khóa cứng Cáp USB: Chỉ dùng cáp USB, tuyệt đối không nhảy sang Wi-Fi (0ms lag)">
+          <span class="tab-ico">🔒🔌</span>
+          <span class="tab-txt">Khóa USB</span>
         </button>
-        <button type="button" class="strip-tab-btn" id="btnLockConnWifi" title="Khóa cứng dùng Wi-Fi (Không dây, không tự động chuyển USB)">
-          <span class="tab-ico">📶</span>
-          <span class="tab-txt">Cố Định Wi-Fi</span>
+        <button type="button" class="strip-tab-btn" id="btnLockConnWifi" title="Khóa cứng Wi-Fi: Chỉ dùng Wi-Fi, không nhảy sang USB kể cả khi cắm sạc pin">
+          <span class="tab-ico">🔒📶</span>
+          <span class="tab-txt">Khóa Wi-Fi</span>
+        </button>
+        <button type="button" class="strip-tab-btn" id="btnLockConnAuto" title="Tự động linh hoạt: Ưu tiên USB, rút cáp tự động chuyển sang Wi-Fi dự phòng">
+          <span class="tab-ico">⚡</span>
+          <span class="tab-txt">Tự Động</span>
         </button>
       </div>
 

@@ -130,6 +130,8 @@ contextBridge.exposeInMainWorld('api', {
 
   setSelectedDevice: (deviceId, meta) => ipcRenderer.invoke('set-selected-device', deviceId, meta),
   disconnectAllWifi: () => ipcRenderer.invoke('disconnect-all-wifi'),
+  setConnectionLockMode: (mode) => ipcRenderer.invoke('set-connection-lock-mode', mode),
+  getConnectionLockMode: () => ipcRenderer.invoke('get-connection-lock-mode'),
   pollHardwareStats: () => ipcRenderer.invoke('poll-hardware-stats'),
 
   // 🔊 Audio Forwarding APIs (Bật/Tắt truyền âm thanh qua PC)
