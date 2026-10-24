@@ -687,8 +687,9 @@ async function startCurrentControl() {
       return;
     }
 
-    // Ưu tiên chiếu màn hình Mirror trừ khi người dùng cố tình tích chọn chế độ bảng đen
-    const isMirror = elRadModeBlackTab ? !elRadModeBlackTab.checked : true;
+    // Chế độ chiếu màn hình: Mặc định Tab Bảng Đen (Không chiếu màn hình PC)
+    const isMirror = elRadModeMirror ? elRadModeMirror.checked : false;
+    const isAudio = elChkForwardAudio ? elChkForwardAudio.checked : false;
     const options = {
       deviceId: currentDeviceId,
       connectionMode: preferredConnectionMode,
@@ -704,7 +705,7 @@ async function startCurrentControl() {
       enableControl: elChkEnableControl ? elChkEnableControl.checked : true,
       uhidInput: elChkUhidInput ? elChkUhidInput.checked : true,
       turnScreenOff: elChkTurnScreenOff ? elChkTurnScreenOff.checked : false,
-      forwardAudio: elChkForwardAudio ? elChkForwardAudio.checked : true,
+      forwardAudio: isAudio,
       stayAwake: elChkStayAwake ? elChkStayAwake.checked : true,
       fullView: elChkFullView ? elChkFullView.checked : true,
       fullViewMode: elSelFullViewMode ? elSelFullViewMode.value : 'fullscreen',
@@ -787,11 +788,7 @@ function formatSwitchKeyLabel(key) {
     case 'capslock': return 'CAPS LOCK';
     case 'ctrl': return 'CTRL';
     case 'tab': return 'TAB';
-    case 'f1': return 'F1';
-    case 'f2': return 'F2';
-    case 'f3': return 'F3';
-    case 'f4': return 'F4';
-    case 'mbutton': return 'CHUỘT GIỮA';
+                    case 'mbutton': return 'CHUỘT GIỮA';
     case 'xbutton1': return 'CHUỘT HÔNG 4';
     case 'xbutton2': return 'CHUỘT HÔNG 5';
     default: return k.toUpperCase();
@@ -884,8 +881,8 @@ function updateModeCardVisuals() {
       if (elBtnMirrorTitle) elBtnMirrorTitle.textContent = 'BẮT ĐẦU CHIẾU MÀN HÌNH';
       if (elBtnMirrorSub) elBtnMirrorSub.textContent = `Chiếu lên PC & Tương tác chuột phím (Phím tắt: Bấm ${activeKeyName} đổi chuột)`;
     } else {
-      if (elBtnMirrorTitle) elBtnMirrorTitle.textContent = 'BẮT ĐẦU ĐIỀU KHIỂN (TAB BẢNG ĐEN)';
-      if (elBtnMirrorSub) elBtnMirrorSub.textContent = `Mở tab bắt chuột tối ưu tốc độ • Bấm ${activeKeyName} đổi chuột tức thì 0ms`;
+      if (elBtnMirrorTitle) elBtnMirrorTitle.textContent = 'BẮT ĐẦU ĐIỀU KHIỂN (ẨN CỬA SỔ)';
+      if (elBtnMirrorSub) elBtnMirrorSub.textContent = `Tàng hình 100% không vướng mắt • Bấm ${activeKeyName} đổi chuột tức thì 0ms`;
     }
   }
 }
@@ -905,6 +902,7 @@ if (elBtnToggleMirrorOn) {
     if (elRadModeMirror) elRadModeMirror.checked = true;
     if (elRadModeBlackTab) elRadModeBlackTab.checked = false;
     if (activeMode) activeMode.mirrorScreen = true;
+    localStorage.setItem('pandakey_mirror_preference', 'true');
     playSoundCue('mode');
     updateModeCardVisuals();
     updateFooterLog('🖥️ Đã chọn: Chiếu toàn bộ màn hình điện thoại lên máy tính (120 FPS).');
@@ -917,6 +915,7 @@ if (elBtnToggleMirrorOff) {
     if (elRadModeMirror) elRadModeMirror.checked = false;
     if (elRadModeBlackTab) elRadModeBlackTab.checked = true;
     if (activeMode) activeMode.mirrorScreen = false;
+    localStorage.setItem('pandakey_mirror_preference', 'false');
     playSoundCue('mode');
     updateModeCardVisuals();
     updateFooterLog('📱 Đã chọn: Không chiếu lên máy tính (Nhìn thẳng màn điện thoại, 0% CPU, 0ms Lag).');
@@ -929,7 +928,7 @@ const elBtnToggleAudioOn = document.getElementById('btnToggleAudioOn');
 const elBtnToggleAudioOff = document.getElementById('btnToggleAudioOff');
 
 function updateAudioVisuals(forwardAudio) {
-  const isAudio = (forwardAudio !== undefined) ? !!forwardAudio : (elChkForwardAudio ? elChkForwardAudio.checked : true);
+  const isAudio = (forwardAudio !== undefined) ? !!forwardAudio : (elChkForwardAudio ? elChkForwardAudio.checked : false);
   if (elChkForwardAudio && elChkForwardAudio.checked !== isAudio) {
     elChkForwardAudio.checked = isAudio;
   }
@@ -943,9 +942,10 @@ if (elBtnToggleAudioOn) {
   elBtnToggleAudioOn.addEventListener('click', async () => {
     if (elChkForwardAudio) elChkForwardAudio.checked = true;
     if (activeMode) activeMode.forwardAudio = true;
+    localStorage.setItem('pandakey_audio_preference', 'true');
     updateAudioVisuals(true);
     playSoundCue('mode');
-    updateFooterLog('🔊 Đã chọn: BẬT truyền âm thanh điện thoại sang máy tính (F8).');
+    updateFooterLog('🔊 Đã chọn: BẬT truyền âm thanh điện thoại sang máy tính.');
     if (window.api && window.api.toggleAudioForwarding) {
       await window.api.toggleAudioForwarding(true);
     } else if (isControlling) {
@@ -959,9 +959,10 @@ if (elBtnToggleAudioOff) {
   elBtnToggleAudioOff.addEventListener('click', async () => {
     if (elChkForwardAudio) elChkForwardAudio.checked = false;
     if (activeMode) activeMode.forwardAudio = false;
+    localStorage.setItem('pandakey_audio_preference', 'false');
     updateAudioVisuals(false);
     playSoundCue('mode');
-    updateFooterLog('🔇 Đã chọn: TẮT truyền âm thanh - Nghe trực tiếp trên điện thoại (F8).');
+    updateFooterLog('🔇 Đã chọn: TẮT truyền âm thanh - Nghe trực tiếp trên điện thoại.');
     if (window.api && window.api.toggleAudioForwarding) {
       await window.api.toggleAudioForwarding(false);
     } else if (isControlling) {
@@ -975,7 +976,7 @@ if (window.api && window.api.onAudioForwardingChanged) {
   window.api.onAudioForwardingChanged(({ forwardAudio }) => {
     updateAudioVisuals(forwardAudio);
     if (activeMode) activeMode.forwardAudio = forwardAudio;
-    updateFooterLog(forwardAudio ? '🔊 [F8] Đã BẬT truyền âm thanh sang máy tính' : '🔇 [F8] Đã TẮT truyền âm thanh sang máy tính');
+    updateFooterLog(forwardAudio ? '🔊 Đã BẬT truyền âm thanh sang máy tính' : '🔇 Đã TẮT truyền âm thanh sang máy tính');
   });
 }
 
@@ -1025,6 +1026,16 @@ async function loadProfiles() {
     const data = await window.api.getProfiles();
     profilesData = data;
     renderGameSelector();
+
+    // ⭐ Mặc định: Không chiếu màn hình PC (Tab Bảng Đen) & Tắt âm thanh PC
+    if (localStorage.getItem('pandakey_mirror_preference') === null) {
+      if (elRadModeMirror) elRadModeMirror.checked = false;
+      if (elRadModeBlackTab) elRadModeBlackTab.checked = true;
+    }
+    if (localStorage.getItem('pandakey_audio_preference') === null) {
+      if (elChkForwardAudio) elChkForwardAudio.checked = false;
+    }
+
     setActiveProfile(data.activeProfileId || data.profiles[0].id);
     renderProfilesOverview();
   } catch (e) {
@@ -1105,16 +1116,35 @@ function updateModeDisplay() {
   if (elSelRenderDriver && activeMode.renderDriver) elSelRenderDriver.value = activeMode.renderDriver;
   if (elSelMouseSpeed && activeMode.mouseSpeed) elSelMouseSpeed.value = String(activeMode.mouseSpeed);
 
-  if (activeMode.mirrorScreen !== undefined) {
-    if (elRadModeMirror) elRadModeMirror.checked = !!activeMode.mirrorScreen;
-    if (elRadModeBlackTab) elRadModeBlackTab.checked = !activeMode.mirrorScreen;
-    if (typeof updateModeCardVisuals === 'function') updateModeCardVisuals();
+  // Cài đặt ưu tiên: Mặc định Tab Bảng Đen (Không chiếu màn hình) & Tắt âm thanh PC
+  const savedMirrorPref = localStorage.getItem('pandakey_mirror_preference');
+  if (savedMirrorPref !== null) {
+    const isMirror = savedMirrorPref === 'true';
+    if (elRadModeMirror) elRadModeMirror.checked = isMirror;
+    if (elRadModeBlackTab) elRadModeBlackTab.checked = !isMirror;
+  } else {
+    // Mặc định: Không chiếu màn hình PC
+    if (elRadModeMirror) elRadModeMirror.checked = false;
+    if (elRadModeBlackTab) elRadModeBlackTab.checked = true;
+    if (activeMode) activeMode.mirrorScreen = false;
   }
+  if (typeof updateModeCardVisuals === 'function') updateModeCardVisuals();
+
   if (elChkEnableControl && activeMode.enableControl !== undefined) elChkEnableControl.checked = !!activeMode.enableControl;
   if (elChkUhidInput && activeMode.uhidInput !== undefined) elChkUhidInput.checked = activeMode.uhidInput !== false;
   if (elChkTurnScreenOff && activeMode.turnScreenOff !== undefined) elChkTurnScreenOff.checked = !!activeMode.turnScreenOff;
-  if (activeMode.forwardAudio !== undefined && elChkForwardAudio) elChkForwardAudio.checked = activeMode.forwardAudio;
-  updateAudioVisuals(activeMode.forwardAudio);
+
+  const savedAudioPref = localStorage.getItem('pandakey_audio_preference');
+  if (savedAudioPref !== null) {
+    const isAudio = savedAudioPref === 'true';
+    if (elChkForwardAudio) elChkForwardAudio.checked = isAudio;
+    updateAudioVisuals(isAudio);
+  } else {
+    // Mặc định: Tắt âm thanh PC
+    if (elChkForwardAudio) elChkForwardAudio.checked = false;
+    if (activeMode) activeMode.forwardAudio = false;
+    updateAudioVisuals(false);
+  }
   if (activeMode.stayAwake !== undefined && elChkStayAwake) elChkStayAwake.checked = activeMode.stayAwake;
 }
 
@@ -1372,6 +1402,7 @@ async function handleToggleOrb() {
     if (res && typeof res.isOrbMode === 'boolean') {
       if (elMiniContainer) {
         elMiniContainer.classList.toggle('orb-mode', res.isOrbMode);
+      document.body.classList.toggle('orb-body', res.isOrbMode);
       }
       playSoundCue('mode');
       updateFooterLog(res.isOrbMode ? '🔮 Đã bật chế độ Quả Cầu Nổi (Orb Mode 44px)' : 'Đã khôi phục HUD Mini (200x200px)');
@@ -1455,7 +1486,7 @@ if (elBtnCloseDrawer) {
   });
 }
 
-// Bật / Tắt HUD Phím Ảo F12
+// Bật / Tắt HUD Phím Ảo
 let isKeymapHudActive = false;
 if (elBtnToggleKeymapHud) {
   elBtnToggleKeymapHud.addEventListener('click', async () => {
@@ -1464,7 +1495,7 @@ if (elBtnToggleKeymapHud) {
       await window.api.toggleKeymapOverlay(isKeymapHudActive);
     }
     elBtnToggleKeymapHud.classList.toggle('active', isKeymapHudActive);
-    updateFooterLog(`⌨️ HUD Phím Ảo Trong Game (F12): ${isKeymapHudActive ? 'BẬT' : 'TẮT'}`);
+    updateFooterLog(`⌨️ HUD Phím Ảo Trong Game: ${isKeymapHudActive ? 'BẬT' : 'TẮT'}`);
     playSoundCue('activate');
   });
 }
@@ -1715,13 +1746,7 @@ if (elRngRecoilDelay) {
   });
 }
 
-// Phím tắt F6 bật/tắt ghìm tâm siêu tốc
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'F6') {
-    e.preventDefault();
-    handleToggleRecoil();
-  }
-});
+// Ghìm tâm điều khiển qua giao diện hoặc nút bấm
 
 // ================= 📱 KÉO GIÃN MÀN HÌNH TỈ LỆ IPAD (4:3) =================
 const elSelIpadPreset = document.getElementById('selIpadPreset');
@@ -2469,7 +2494,7 @@ if (elBtnActivateWirelessAdb) {
   });
 }
 
-// ================= 🎯 QUICK-SWITCH SNIPER (AWM SIÊU TỐC - F7) =================
+// ================= 🎯 QUICK-SWITCH SNIPER (AWM SIÊU TỐC) =================
 let isQuickSniperActive = false;
 const elBtnToggleQuickSniper = document.getElementById('btnToggleQuickSniper');
 const elLblQuickSniperState = document.getElementById('lblQuickSniperState');
@@ -2487,7 +2512,7 @@ function updateQuickSniperUI() {
     else elLblQuickSniperState.classList.remove('active');
   }
   if (elQuickSniperStatus) {
-    elQuickSniperStatus.textContent = isQuickSniperActive ? 'Đang kích hoạt (F7)' : 'Sẵn sàng';
+    elQuickSniperStatus.textContent = isQuickSniperActive ? 'Đang kích hoạt' : 'Sẵn sàng';
     if (isQuickSniperActive) elQuickSniperStatus.classList.add('active');
     else elQuickSniperStatus.classList.remove('active');
   }
@@ -2500,7 +2525,7 @@ if (elBtnToggleQuickSniper) {
     if (window.api && window.api.toggleQuickSniper) {
       await window.api.toggleQuickSniper(isQuickSniperActive);
     }
-    updateFooterLog(`🎯 Quick-Switch Sniper: ${isQuickSniperActive ? 'BẬT (F7) - Tự Đổi Súng Khi Bắn' : 'TẮT'}`);
+    updateFooterLog(`🎯 Quick-Switch Sniper: ${isQuickSniperActive ? 'BẬT - Tự Đổi Súng Khi Bắn' : 'TẮT'}`);
     playSoundCue('activate');
   });
 }
@@ -2547,7 +2572,7 @@ if (elBtnToggleClutchShield) {
   });
 }
 
-// ================= 📸 INSTANT HIGHLIGHT SCREENSHOT (F9) =================
+// ================= 📸 INSTANT HIGHLIGHT SCREENSHOT =================
 const elBtnCaptureInstantScreenshot = document.getElementById('btnCaptureInstantScreenshot');
 const elBtnOpenScreenshotsFolder = document.getElementById('btnOpenScreenshotsFolder');
 const elLblLatestScreenshot = document.getElementById('lblLatestScreenshot');
@@ -2586,7 +2611,7 @@ if (window.api && window.api.onScreenshotCaptured) {
   });
 }
 
-// ================= 🌐 SCREEN TRANSLATOR CONTROLS (F10 / ALT+T) =================
+// ================= 🌐 SCREEN TRANSLATOR CONTROLS =================
 const elBtnTriggerScreenTranslate = document.getElementById('btnTriggerScreenTranslate');
 const elSelTranslatorLang = document.getElementById('selTranslatorLang');
 const elLblTranslatorStatus = document.getElementById('lblTranslatorStatus');
@@ -2606,9 +2631,9 @@ if (elBtnTriggerScreenTranslate) {
       const res = await window.api.triggerScreenTranslate({ language: lang, deviceId: currentDeviceId });
       if (elLblTranslatorStatus) {
         if (res && res.success) {
-          elLblTranslatorStatus.textContent = 'Đã dịch xong (F10)';
+          elLblTranslatorStatus.textContent = 'Đã dịch xong';
         } else {
-          elLblTranslatorStatus.textContent = 'Lỗi dịch (F10)';
+          elLblTranslatorStatus.textContent = 'Lỗi dịch';
         }
       }
       updateFooterLog('🌐 Hoàn tất dịch màn hình game!');
@@ -3237,6 +3262,166 @@ window.addEventListener('DOMContentLoaded', () => {
   if (window.api && window.api.pollHardwareStats) {
     window.api.pollHardwareStats();
   }
-  setInterval(updateDeviceList, 3000);
-  setInterval(refreshBatteryStats, 4000);
+  setInterval(() => {
+    if (!isSessionActive) {
+      updateDeviceList();
+    }
+  }, 5000);
+  setInterval(refreshBatteryStats, 8000);
 });
+
+// ================= 🚀 ULTRA GAMING UI UPDATE LOGIC =================
+
+// 1. MOUSE MODE INDICATOR HUD & AUTO-DIM
+const elMouseStatusIndicator = document.getElementById('mouseStatusIndicator');
+const elMouseHudText = document.getElementById('mouseHudText');
+let currentMouseMode = 'pc';
+let isAutoDimEnabled = localStorage.getItem('pandakey_auto_dim') !== 'false';
+const elChkAutoDim = document.getElementById('chkAutoDim');
+if (elChkAutoDim) {
+  elChkAutoDim.checked = isAutoDimEnabled;
+  elChkAutoDim.addEventListener('change', () => {
+    isAutoDimEnabled = elChkAutoDim.checked;
+    localStorage.setItem('pandakey_auto_dim', isAutoDimEnabled ? 'true' : 'false');
+    if (!isAutoDimEnabled) {
+      document.body.classList.remove('stealth-dimmed');
+    } else if (currentMouseMode === 'phone') {
+      document.body.classList.add('stealth-dimmed');
+    }
+  });
+}
+
+function updateMouseModeUI(mode) {
+  currentMouseMode = mode;
+  if (!elMouseStatusIndicator) return;
+  if (mode === 'phone') {
+    elMouseStatusIndicator.classList.remove('pc-mode');
+    elMouseStatusIndicator.classList.add('phone-mode');
+    if (elMouseHudText) elMouseHudText.textContent = 'GAME';
+    if (isAutoDimEnabled) {
+      document.body.classList.add('stealth-dimmed');
+    }
+  } else {
+    elMouseStatusIndicator.classList.remove('phone-mode');
+    elMouseStatusIndicator.classList.add('pc-mode');
+    if (elMouseHudText) elMouseHudText.textContent = 'PC';
+    document.body.classList.remove('stealth-dimmed');
+  }
+}
+
+if (elMouseStatusIndicator) {
+  elMouseStatusIndicator.addEventListener('click', () => {
+    if (window.api && window.api.switchMouseFocus) {
+      window.api.switchMouseFocus();
+    }
+  });
+}
+
+if (window.api && window.api.onMouseModeChanged) {
+  window.api.onMouseModeChanged((data) => {
+    if (data && data.mode) {
+      updateMouseModeUI(data.mode);
+    }
+  });
+}
+
+// 2. MINI DOCK MODE TOGGLE
+const elBtnToggleMiniDock = document.getElementById('btnToggleMiniDock');
+let isMiniDockActive = false;
+if (elBtnToggleMiniDock) {
+  elBtnToggleMiniDock.addEventListener('click', async () => {
+    isMiniDockActive = !isMiniDockActive;
+    if (isMiniDockActive) {
+      document.body.classList.add('mini-dock-mode');
+      if (window.api && window.api.toggleWindowSize) {
+        await window.api.toggleWindowSize({ w: 340, h: 36 });
+      }
+      elBtnToggleMiniDock.textContent = '⊞';
+      elBtnToggleMiniDock.title = 'Mở rộng Dashboard';
+    } else {
+      document.body.classList.remove('mini-dock-mode');
+      if (window.api && window.api.toggleWindowSize) {
+        await window.api.toggleWindowSize({ w: 340, h: 450 });
+      }
+      elBtnToggleMiniDock.textContent = '⊟';
+      elBtnToggleMiniDock.title = 'Thu nhỏ thành thanh Mini Dock';
+    }
+  });
+}
+
+// 3. GAMING THEMES SWITCHER
+const themeChips = document.querySelectorAll('.theme-chip');
+function applyTheme(themeName) {
+  document.body.setAttribute('data-theme', themeName);
+  localStorage.setItem('pandakey_theme', themeName);
+  themeChips.forEach(chip => {
+    chip.classList.toggle('active', chip.getAttribute('data-theme') === themeName);
+  });
+}
+
+const savedTheme = localStorage.getItem('pandakey_theme') || 'cyan';
+applyTheme(savedTheme);
+
+themeChips.forEach(chip => {
+  chip.addEventListener('click', () => {
+    const t = chip.getAttribute('data-theme');
+    applyTheme(t);
+    playSoundCue('mode');
+  });
+});
+
+// 4. RADIAL QUICK ACTION WHEEL
+const elRadialBackdrop = document.getElementById('radialMenuBackdrop');
+const elBtnTriggerRadial = document.getElementById('btnTriggerRadial');
+
+function toggleRadialMenu(show) {
+  if (!elRadialBackdrop) return;
+  const target = (typeof show === 'boolean') ? show : (elRadialBackdrop.style.display === 'none');
+  elRadialBackdrop.style.display = target ? 'flex' : 'none';
+  if (target) playSoundCue('activate');
+}
+
+if (elBtnTriggerRadial) {
+  elBtnTriggerRadial.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleRadialMenu();
+  });
+}
+
+if (elRadialBackdrop) {
+  elRadialBackdrop.addEventListener('click', (e) => {
+    if (e.target === elRadialBackdrop) {
+      toggleRadialMenu(false);
+    }
+  });
+
+  const radialSlices = elRadialBackdrop.querySelectorAll('.radial-slice');
+  radialSlices.forEach(slice => {
+    slice.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = slice.getAttribute('data-action');
+      toggleRadialMenu(false);
+      playSoundCue('activate');
+
+      if (action === 'recoil') {
+        const btn = document.getElementById('btnToggleRecoil');
+        if (btn) btn.click();
+      } else if (action === 'sniper') {
+        const btn = document.getElementById('btnToggleQuickSniper');
+        if (btn) btn.click();
+      } else if (action === 'screenshot') {
+        const btn = document.getElementById('btnCaptureInstantScreenshot');
+        if (btn) btn.click();
+      } else if (action === 'translate') {
+        const btn = document.getElementById('btnTriggerScreenTranslate');
+        if (btn) btn.click();
+      } else if (action === 'keymap') {
+        const btn = document.getElementById('btnToggleKeymapHud');
+        if (btn) btn.click();
+      } else if (action === 'cooler') {
+        const btn = document.getElementById('btnToggleCooler');
+        if (btn) btn.click();
+      }
+    });
+  });
+}

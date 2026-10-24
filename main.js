@@ -42,6 +42,10 @@ if (!gotTheLock) {
 
 app.commandLine.appendSwitch('disable-gpu-shader-disk-cache');
 app.commandLine.appendSwitch('disable-http-cache');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
 
 const profileManager = new ProfileManager(customUserDataPath);
 const githubConfigFile = path.join(customUserDataPath, 'github_config.json');
@@ -110,7 +114,7 @@ let screenTranslator = new ScreenTranslator(adbPath);
 let translatorOverlayWindow = null;
 let translatorSourceLang = 'eng+chi_sim';
 
-// ================= ⌨️ NATIVE KEYMAP HUD OVERLAY TRONG GAME (F12) =================
+// ================= ⌨️ NATIVE KEYMAP HUD OVERLAY TRONG GAME =================
 function getScrcpyWindowBounds() {
   return new Promise((resolve) => {
     execFile(path.join(binDir, 'switch_mouse.exe'), ['--get-scrcpy-rect'], { windowsHide: true }, (err, stdout) => {
@@ -143,15 +147,12 @@ async function toggleKeymapOverlay(enable) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 360,
-    height: 520,
-    minWidth: 280,
-    minHeight: 360,
-    backgroundColor: '#090d1a',
-    show: true,
-    autoHideMenuBar: true,
-    frame: false,
-    transparent: false,
+    width: 340,
+    height: 450,
+    minWidth: 36,
+    minHeight: 36,
+    backgroundColor: '#00000000',
+    transparent: true,
     resizable: true,
     alwaysOnTop: true,
     icon: path.join(binDir, 'icon.png'),
@@ -189,58 +190,6 @@ function createWindow() {
   try {
     globalShortcut.register('CommandOrControl+Alt+K', () => {
       try { toggleControlState(); } catch (e) {}
-    });
-  } catch (e) {}
-
-  // 2. Phím tắt F6 toàn cục Bật/Tắt Ghìm Tâm VIP (hoạt động ngay cả khi đang trong game Scrcpy)
-  try {
-    globalShortcut.register('F6', () => {
-      try { toggleRecoilGlobal(); } catch (e) {}
-    });
-  } catch (e) {}
-
-  // 3. Phím tắt F7 toàn cục Bật/Tắt Tuyệt Kỹ Quick-Switch Sniper
-  try {
-    globalShortcut.register('F7', () => {
-      try { toggleQuickSniperGlobal(); } catch (e) {}
-    });
-  } catch (e) {}
-
-  // 3.5. Phím tắt F8 toàn cục: Bật/Tắt truyền âm thanh điện thoại qua máy tính (Scrcpy Audio)
-  try {
-    globalShortcut.register('F8', () => {
-      try { toggleAudioForwardingGlobal(); } catch (e) {}
-    });
-  } catch (e) {}
-
-  // 4. Phím tắt F9 toàn cục Chụp ảnh khoảnh khắc Highlight
-  try {
-    globalShortcut.register('F9', () => {
-      try { captureInstantScreenshot(); } catch (e) {}
-    });
-  } catch (e) {}
-
-  // 5. Phím tắt Ctrl+Alt+O: Bật/Tắt thu nhỏ Quả Cầu Nổi (Orb Mode)
-  try {
-    globalShortcut.register('CommandOrControl+Alt+O', () => {
-      try {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('trigger-toggle-orb');
-        }
-      } catch (e) {}
-    });
-  } catch (e) {}
-
-
-  // 6. Phím tắt F10 & Alt+T toàn cục: Dịch Màn Hình Game Thời Gian Thực (In-Game Screen Translator)
-  try {
-    globalShortcut.register('F10', () => {
-      try { triggerScreenTranslateInternal(); } catch (e) {}
-    });
-  } catch (e) {}
-  try {
-    globalShortcut.register('Alt+T', () => {
-      try { triggerScreenTranslateInternal(); } catch (e) {}
     });
   } catch (e) {}
 
@@ -366,19 +315,19 @@ ipcMain.handle('toggle-window-size', (event, targetSize) => {
       return { w: targetSize.w, h: targetSize.h };
     }
     const [w, h] = mainWindow.getSize();
-    if (w < 420) {
-      mainWindow.setSize(480, 640);
-      return { w: 480, h: 640, expanded: true };
+    if (w < 460) {
+      mainWindow.setSize(520, 680);
+      return { w: 520, h: 680, expanded: true };
     } else {
-      mainWindow.setSize(360, 520);
-      return { w: 360, h: 520, expanded: false };
+      mainWindow.setSize(340, 450);
+      return { w: 340, h: 450, expanded: false };
     }
   }
-  return { w: 360, h: 520, expanded: false };
+  return { w: 420, h: 590, expanded: false };
 });
 
 let isOrbMode = false;
-let savedPreOrbBounds = { width: 360, height: 520 };
+let savedPreOrbBounds = { width: 340, height: 450 };
 let savedWifiIp = null;
 let mouseRatioY = 1.5;
 let isCursorLocked = false;
@@ -394,13 +343,17 @@ ipcMain.handle('toggle-orb-mode', () => {
     isOrbMode = !isOrbMode;
     if (isOrbMode) {
       const [w, h] = mainWindow.getSize();
-      savedPreOrbBounds = { width: w, height: h };
-      mainWindow.setMinimumSize(42, 42);
-      mainWindow.setSize(44, 44);
+      if (w > 100 && h > 100) {
+        savedPreOrbBounds = { width: w, height: h };
+      }
+      mainWindow.setMinimumSize(36, 36);
+      mainWindow.setSize(48, 48);
       mainWindow.setAlwaysOnTop(true);
     } else {
-      mainWindow.setMinimumSize(280, 360);
-      mainWindow.setSize(savedPreOrbBounds.width || 360, savedPreOrbBounds.height || 520);
+      const restoreW = (savedPreOrbBounds && savedPreOrbBounds.width >= 280) ? savedPreOrbBounds.width : 340;
+      const restoreH = (savedPreOrbBounds && savedPreOrbBounds.height >= 360) ? savedPreOrbBounds.height : 450;
+      mainWindow.setMinimumSize(36, 36);
+      mainWindow.setSize(restoreW, restoreH);
     }
     return { isOrbMode };
   }
@@ -427,6 +380,11 @@ ipcMain.handle('set-mouse-ratio-y', (event, ratio) => {
   return { success: true, ratioY: mouseRatioY };
 });
 
+ipcMain.handle('switch-mouse-focus', () => {
+  switchMouseFocus();
+  return { success: true };
+});
+
 ipcMain.handle('toggle-cursor-lock', (event, enabled) => {
   isCursorLocked = (typeof enabled === 'boolean') ? enabled : !isCursorLocked;
   lockCursorToScrcpy(isCursorLocked);
@@ -434,24 +392,12 @@ ipcMain.handle('toggle-cursor-lock', (event, enabled) => {
 });
 
 function lockCursorToScrcpy(enable) {
+  // switch_mouse.exe xử lý ClipCursor native C# với độ trễ 0ms cực kỳ mượt mà
   if (!enable) {
-    const psUnlock = `Add-Type -TypeDefinition "using System; using System.Runtime.InteropServices; public class Clip { [DllImport(\\\"user32.dll\\\")] public static extern bool ClipCursor(IntPtr r); }"; [Clip]::ClipCursor([IntPtr]::Zero);`;
-    exec(`powershell -WindowStyle Hidden -Command "${psUnlock}"`, { windowsHide: true });
-    return;
+    try {
+      execFile(path.join(binDir, 'switch_mouse.exe'), ['--restore'], { windowsHide: true });
+    } catch (e) {}
   }
-  execFile(path.join(binDir, 'switch_mouse.exe'), ['--get-scrcpy-rect'], { windowsHide: true }, (err, stdout) => {
-    const out = (stdout || '').trim();
-    if (!err && out && !out.includes('NOT_FOUND')) {
-      const parts = out.split(' ').map(Number);
-      if (parts.length === 4) {
-        const [left, top, w, h] = parts;
-        const right = left + w;
-        const bottom = top + h;
-        const psLock = `Add-Type -TypeDefinition "using System; using System.Runtime.InteropServices; [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; } public class Clip { [DllImport(\\\"user32.dll\\\")] public static extern bool ClipCursor(ref RECT r); }"; $r = New-Object RECT; $r.L = ${left}; $r.T = ${top}; $r.R = ${right}; $r.B = ${bottom}; [Clip]::ClipCursor([ref]$r);`;
-        exec(`powershell -WindowStyle Hidden -Command "${psLock}"`, { windowsHide: true });
-      }
-    }
-  });
 }
 
 // ================= 🤖 TỰ ĐỘNG NHẬN DIỆN GAME ĐANG MỞ =================
@@ -472,7 +418,9 @@ const KNOWN_GAME_PACKAGES = {
 function startGameDetectionPoller() {
   if (autoGamePoller) return;
   autoGamePoller = setInterval(() => {
-    const target = currentOptions.deviceId ? `-s "${currentOptions.deviceId}"` : '';
+    const activeDev = resolveActiveAdbDevice();
+    if (!activeDev) return;
+    const target = `-s "${activeDev}"`;
     exec(`"${adbPath}" ${target} shell "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'"`, { windowsHide: true }, (err, stdout) => {
       if (err || !stdout) return;
       const text = stdout.toString();
@@ -494,7 +442,7 @@ function startGameDetectionPoller() {
         }
       }
     });
-  }, 2500);
+  }, 6000);
 }
 
 // ================= 📊 MINI HARDWARE & LATENCY MONITOR =================
@@ -527,7 +475,8 @@ function resolveActiveAdbDevice() {
 
 function queryHardwareStats() {
   const activeDev = resolveActiveAdbDevice();
-  const target = activeDev ? `-s "${activeDev}"` : '';
+  if (!activeDev) return;
+  const target = `-s "${activeDev}"`;
   exec(`"${adbPath}" ${target} shell "dumpsys battery"`, { windowsHide: true }, (err, stdout) => {
     let level = 100;
     let tempC = '36.0';
@@ -556,7 +505,7 @@ function queryHardwareStats() {
 function startHardwareMonitorPoller() {
   queryHardwareStats();
   if (hardwarePoller) return;
-  hardwarePoller = setInterval(queryHardwareStats, 2500);
+  hardwarePoller = setInterval(queryHardwareStats, 6000);
 }
 
 // ================= 📶 ADVANCED WIRELESS SUITE STORAGE =================
@@ -786,6 +735,9 @@ let mouseWatcherProcess = null;
 
 function handleMouseSwitchOutput(out) {
   if (out.includes('RELEASED_TO_PC')) {
+    // Mở ClipCursor khi trả chuột về PC
+    lockCursorToScrcpy(false);
+    sendSafe('mouse-mode-changed', { mode: 'pc' });
     showOsdNotification({
       icon: '🖱️',
       game: 'ĐỔI CHUỘT',
@@ -795,6 +747,9 @@ function handleMouseSwitchOutput(out) {
     });
     sendLog('🔄 [Đổi chuột] Đã nhả chuột & bàn phím về MÁY TÍNH thành công!');
   } else if (out.includes('CAPTURED_TO_PHONE')) {
+    // Tự động clip cursor vào tâm cửa sổ scrcpy → quay 360° không bị chặn biên
+    lockCursorToScrcpy(true);
+    sendSafe('mouse-mode-changed', { mode: 'phone' });
     showOsdNotification({
       icon: '🎮',
       game: 'ĐỔI CHUỘT',
@@ -1200,8 +1155,9 @@ ipcMain.handle('toggle-rapid-fire', async (event, { enabled, clicksPerSec }) => 
       [RapidClick]::Click()
     `;
 
+    const switcherPath = path.join(binDir, 'switch_mouse.exe');
     rapidFireInterval = setInterval(() => {
-      exec(`powershell -WindowStyle Hidden -Command "${psScript.replace(/\r?\n/g, ' ')}"`, { windowsHide: true });
+      execFile(switcherPath, ['--click'], { windowsHide: true }, () => {});
     }, intervalMs);
 
     showOsdNotification({
@@ -1438,24 +1394,24 @@ function toggleRecoilGlobal(forceState, pullY, jitterX, delayMs, intervalMs) {
     showOsdNotification({
       icon: '🔫',
       game: 'RECOIL CONTROL VIP',
-      badge: 'BẬT (F6)',
+      badge: 'BẬT (Ghìm Tâm)',
       mode: `Kéo Trục Y: ${recoilConfig.pullY}px • Rung: ±${recoilConfig.jitterX}px`,
       specs: `Độ trễ bắt đầu: ${recoilConfig.delayMs}ms • Tự động ghìm khi sấy đạn`
     });
-    sendLog(`🎯 [Ghìm Tâm VIP] Đã BẬT ghìm tâm (F6) • Trục Y: ${recoilConfig.pullY}px`);
+    sendLog(`🎯 [Ghìm Tâm VIP] Đã BẬT ghìm tâm • Trục Y: ${recoilConfig.pullY}px`);
   } else {
     stopRecoilWorker();
     showOsdNotification({
       icon: '⚪',
       game: 'RECOIL CONTROL',
-      badge: 'ĐÃ TẮT (F6)',
+      badge: 'ĐÃ TẮT',
       mode: 'Bắn súng bình thường',
       specs: 'Đã tắt tự động ghìm tâm'
     });
-    sendLog('⚪ [Ghìm Tâm VIP] Đã TẮT ghìm tâm (F6)');
+    sendLog('⚪ [Ghìm Tâm VIP] Đã TẮT ghìm tâm');
   }
   sendSafe('recoil-toggled-global', recoilConfig.enabled);
-  return { success: true, enabled: recoilConfig.enabled, config: recoilConfig, message: recoilConfig.enabled ? 'Đã bật Ghìm Tâm Tự Động (F6)!' : 'Đã tắt Ghìm Tâm Tự Động.' };
+  return { success: true, enabled: recoilConfig.enabled, config: recoilConfig, message: recoilConfig.enabled ? 'Đã bật Ghìm Tâm Tự Động!' : 'Đã tắt Ghìm Tâm Tự Động.' };
 }
 
 ipcMain.handle('toggle-recoil', async (event, { enabled, pullY, jitterX, delayMs, intervalMs } = {}) => {
@@ -2058,11 +2014,10 @@ async function startControlInternal(options = {}) {
       sendLog(`🔴 [Ghi hình MP4] Đang ghi hình trận đấu vào: ${recFileName}`);
     }
   } else {
-    // ⭐ TAB BẢNG ĐEN (VÙNG BẮT CHUỘT TRỰC TIẾP - 0% CPU, TỐI ƯU TỐC ĐỘ CHUỘT CHUẨN XÁC)
+    // ⭐ TAB BẢNG ĐEN (BẢNG ĐEN THUẦN TÚY - CÓ THỂ DI CHUYỂN MỌI NƠI TÙY Ý, 0% CPU, TÁCH BIỆT CHUỘT ĐIỆN THOẠI & MÁY TÍNH)
     args.push('-K', '-M', '--no-video-playback');
-    args.push('--window-width=360', '--window-height=140');
-    args.push('--window-title=Pandakeyauto - Vung Bat Chuot');
-    args.push('--always-on-top');
+    args.push('--window-width=320', '--window-height=260');
+    args.push('--window-title=Pandakeyauto - Bang Den (Vung Bat Chuot)');
     args.push('--stay-awake');
     if (forwardAudio) {
       args.push('--audio-source=playback');
@@ -2082,7 +2037,6 @@ async function startControlInternal(options = {}) {
       env: {
         ...process.env,
         SDL_MOUSE_RELATIVE_SPEED_SCALE: mouseScale,
-        SDL_MOUSE_RELATIVE_SCALING: '1',
         SDL_MOUSE_NORMAL_SPEED_SCALE: mouseScale
       }
     });
@@ -2257,7 +2211,7 @@ ipcMain.handle('stop-control', async () => {
   return stopActiveControl();
 });
 
-// ================= 🔊 BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH (F8 / TOGGLE) =================
+// ================= 🔊 BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH =================
 function toggleAudioForwardingGlobal(forceState) {
   const newState = forceState !== undefined ? !!forceState : !currentOptions.forwardAudio;
   currentOptions.forwardAudio = newState;
@@ -2265,12 +2219,12 @@ function toggleAudioForwardingGlobal(forceState) {
   showOsdNotification({
     icon: newState ? '🔊' : '🔇',
     game: 'ÂM THANH SCRCPY',
-    badge: newState ? 'BẬT (F8)' : 'TẮT (F8)',
+    badge: newState ? 'BẬT' : 'TẮT',
     mode: newState ? 'Đã Bật Truyền Âm PC' : 'Đã Tắt Truyền Âm PC',
     specs: newState ? 'Âm thanh điện thoại phát qua Loa/Tai nghe PC' : 'Âm thanh phát trên điện thoại (0ms trễ)'
   });
 
-  sendLog(`🔊 [F8] Đã ${newState ? 'BẬT' : 'TẮT'} truyền âm thanh qua máy tính.`);
+  sendLog(`🔊 [Âm Thanh] Đã ${newState ? 'BẬT' : 'TẮT'} truyền âm thanh qua máy tính.`);
   sendSafe('audio-forwarding-changed', { forwardAudio: newState });
 
   if (isSessionActive && controlProcess) {
@@ -2752,21 +2706,21 @@ function toggleQuickSniperGlobal(forceState) {
     showOsdNotification({
       icon: '🎯',
       game: 'QUICK-SWITCH SNIPER',
-      badge: 'BẬT (F7)',
+      badge: 'BẬT (Sniper)',
       mode: 'Tự Động Đổi Súng Khi Bắn',
       specs: 'Bắn ➔ Đổi Dao (3) ➔ Đổi Súng (1) trong 0.05s'
     });
-    sendLog('🎯 [VIP Sniper] Đã BẬT Quick-Switch Sniper (F7)');
+    sendLog('🎯 [VIP Sniper] Đã BẬT Quick-Switch Sniper');
   } else {
     stopSniperWorker();
     showOsdNotification({
       icon: '⚪',
       game: 'QUICK-SWITCH SNIPER',
-      badge: 'TẮT (F7)',
+      badge: 'TẮT (Sniper)',
       mode: 'Bắn súng bình thường',
       specs: 'Đã tắt tự động đổi súng'
     });
-    sendLog('⚪ [VIP Sniper] Đã TẮT Quick-Switch Sniper (F7)');
+    sendLog('⚪ [VIP Sniper] Đã TẮT Quick-Switch Sniper');
   }
   sendSafe('quick-sniper-toggled-global', isQuickSniperActive);
   return { success: true, active: isQuickSniperActive };
@@ -2827,7 +2781,7 @@ ipcMain.handle('toggle-clutch-shield', async (event, { forceState, deviceId } = 
   return toggleClutchShieldGlobal(forceState, deviceId);
 });
 
-// ================= 📸 INSTANT SCREENSHOT & HIGHLIGHT CAPTURE (F9) =================
+// ================= 📸 INSTANT SCREENSHOT & HIGHLIGHT CAPTURE =================
 function captureInstantScreenshot(deviceId) {
   return new Promise((resolve) => {
     const screenshotsDir = path.join(app.getPath('pictures'), 'Pandakeyauto');
@@ -2845,11 +2799,11 @@ function captureInstantScreenshot(deviceId) {
         showOsdNotification({
           icon: '📸',
           game: 'KHOẢNH KHẮC HIGHLIGHT',
-          badge: 'F9 THÀNH CÔNG',
+          badge: 'THÀNH CÔNG',
           mode: filename,
           specs: `Đã lưu ảnh gốc vào thư mục Pictures\\Pandakeyauto`
         });
-        sendLog(`📸 [Screenshot F9] Đã lưu khoảnh khắc thành công: ${filename}`);
+        sendLog(`📸 [Screenshot] Đã lưu khoảnh khắc thành công: ${filename}`);
         sendSafe('screenshot-captured', { success: true, filePath, filename });
         resolve({ success: true, filePath, filename });
       } else {
@@ -2874,7 +2828,7 @@ ipcMain.handle('open-screenshots-folder', async () => {
   return { success: true };
 });
 
-// ================= 🌐 DỊCH MÀN HÌNH GAME THỜI GIAN THỰC (F10 / ALT+T) =================
+// ================= 🌐 DỊCH MÀN HÌNH GAME THỜI GIAN THỰC =================
 async function openTranslatorOverlay() {
   if (translatorOverlayWindow && !translatorOverlayWindow.isDestroyed()) {
     translatorOverlayWindow.show();
@@ -2938,10 +2892,10 @@ async function triggerScreenTranslateInternal(options = {}) {
 
   showOsdNotification({
     icon: '🌐',
-    game: 'DỊCH MÀN HÌNH GAME (F10)',
+    game: 'DỊCH MÀN HÌNH GAME',
     badge: 'ĐANG QUÉT CHỮ',
     mode: 'Đang quét ký tự màn hình và dịch tiếng Việt...',
-    specs: 'Phím F10 / Esc để đóng'
+    specs: 'Phím Esc để đóng'
   });
 
   const lang = options.language || translatorSourceLang || 'eng+chi_sim';

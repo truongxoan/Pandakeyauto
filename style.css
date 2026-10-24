@@ -26,15 +26,15 @@ body.mini-app-body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg-dark);
+  background: transparent;
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--text-main);
 }
 
 /* ================= 🛸 CỬA SỔ MINI CONTAINER (~200x200px) ================= */
 .mini-container {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -47,7 +47,7 @@ body.mini-app-body {
 
 /* ================= 1. THANH TIÊU ĐỀ FRAMELESS (DRAGGABLE) ================= */
 .mini-titlebar {
-  height: 24px;
+  height: 20px;
   background: rgba(4, 7, 14, 0.85);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(0, 242, 254, 0.2);
@@ -147,10 +147,10 @@ body.mini-app-body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 5px 6px;
+  padding: 3px 4px;
   overflow-y: auto;
   overflow-x: hidden;
-  gap: 5px;
+  gap: 2.5px;
 }
 
 .mini-main-view::-webkit-scrollbar {
@@ -208,8 +208,8 @@ body.mini-app-body {
 }
 
 .btn-micro-icon {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   background: rgba(14, 24, 46, 0.7);
   border: 1px solid rgba(0, 242, 254, 0.2);
   border-radius: 6px;
@@ -245,8 +245,8 @@ body.mini-app-body {
 .btn-hero-master {
   width: 100%;
   height: 100%;
-  min-height: 70px;
-  max-height: 84px;
+  min-height: 42px;
+  max-height: 48px;
   border-radius: 12px;
   background: linear-gradient(135deg, rgba(0, 242, 254, 0.18), rgba(79, 172, 254, 0.28));
   border: 1.5px solid var(--cyan);
@@ -295,9 +295,9 @@ body.mini-app-body {
 }
 
 .hero-play-icon {
-  font-size: 22px;
+  font-size: 15px;
   color: var(--cyan);
-  filter: drop-shadow(0 0 8px var(--cyan));
+  filter: drop-shadow(0 0 5px var(--cyan));
   line-height: 1;
   transition: transform 0.2s;
 }
@@ -313,9 +313,9 @@ body.mini-app-body {
 }
 
 .hero-title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   color: #fff;
   text-shadow: 0 0 8px rgba(0, 242, 254, 0.6);
   line-height: 1.2;
@@ -354,7 +354,7 @@ body.mini-app-body {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 3px;
-  height: 38px;
+  height: 30px;
   flex-shrink: 0;
 }
 
@@ -387,12 +387,12 @@ body.mini-app-body {
 }
 
 .dock-icon {
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
 }
 
 .dock-kbd {
-  font-size: 7.5px;
+  font-size: 6.8px;
   font-weight: 800;
   color: #94a3b8;
   letter-spacing: 0.4px;
@@ -591,7 +591,7 @@ body.mini-app-body {
 
 .drawer-select, .drawer-input {
   width: 100%;
-  height: 24px;
+  height: 20px;
   background: rgba(8, 12, 22, 0.8);
   border: 1px solid rgba(0, 242, 254, 0.25);
   border-radius: 6px;
@@ -648,7 +648,7 @@ body.mini-app-body {
 
 .btn-drawer-action {
   width: 100%;
-  height: 24px;
+  height: 20px;
   background: rgba(0, 242, 254, 0.15);
   border: 1px solid var(--cyan);
   border-radius: 6px;
@@ -675,8 +675,8 @@ body.mini-app-body {
 }
 
 .btn-stepper {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   background: rgba(255, 255, 255, 0.1);
   border: none;
   border-radius: 4px;
@@ -819,7 +819,7 @@ body.mini-app-body {
 
 .drawer-token-input input {
   flex: 1;
-  height: 24px;
+  height: 20px;
   background: rgba(8, 12, 22, 0.8);
   border: 1px solid rgba(0, 242, 254, 0.25);
   border-radius: 6px;
@@ -830,7 +830,7 @@ body.mini-app-body {
 
 .btn-token-eye {
   width: 24px;
-  height: 24px;
+  height: 20px;
   background: rgba(255, 255, 255, 0.1);
   border: none;
   border-radius: 6px;
@@ -860,29 +860,33 @@ body.mini-app-body {
 }
 
 .mini-container.orb-mode {
-  width: 52px !important;
-  height: 52px !important;
-  min-width: 52px !important;
-  min-height: 52px !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+  max-width: 48px !important;
+  max-height: 48px !important;
   border-radius: 50% !important;
   padding: 0 !important;
   margin: 0 !important;
-  border: 2.5px solid var(--cyan) !important;
-  box-shadow: 0 0 20px rgba(0, 242, 254, 0.85), inset 0 0 14px rgba(121, 40, 202, 0.75) !important;
+  border: 2px solid var(--cyan) !important;
+  box-shadow: 0 0 16px rgba(0, 242, 254, 0.85), inset 0 0 10px rgba(121, 40, 202, 0.75) !important;
   background: radial-gradient(circle, rgba(14, 22, 42, 0.98), #080c18) !important;
   overflow: hidden !important;
-  -webkit-app-region: drag;
-  cursor: grab;
+  -webkit-app-region: drag !important;
+  cursor: grab !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   animation: orb-float 3s ease-in-out infinite;
 }
 
 .mini-container.orb-mode:active {
-  cursor: grabbing;
+  cursor: grabbing !important;
 }
 
-.mini-container.orb-mode .mini-titlebar,
-.mini-container.orb-mode .mini-main-view,
-.mini-container.orb-mode .settings-drawer {
+/* ẨN TUYỆT ĐỐI TOÀN BỘ CÁC PHẦN TỬ KHÁC KHI Ở CHẾ ĐỘ BONG BÓNG */
+.mini-container.orb-mode > *:not(.mini-orb-view) {
   display: none !important;
 }
 
@@ -924,15 +928,15 @@ body.mini-app-body {
   -webkit-app-region: no-drag !important;
   pointer-events: auto !important;
   cursor: pointer !important;
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   z-index: 10;
 }
 
 .orb-icon {
-  font-size: 22px;
-  filter: drop-shadow(0 0 6px var(--cyan));
+  font-size: 16px;
+  filter: drop-shadow(0 0 5px var(--cyan));
   transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   -webkit-app-region: no-drag !important;
   pointer-events: auto !important;
@@ -1280,7 +1284,7 @@ body.mini-app-body {
   font-weight: 900;
 }
 .q-wifi-badge {
-  font-size: 7.5px;
+  font-size: 6.8px;
   font-weight: 800;
   padding: 1px 5px;
   border-radius: 4px;
@@ -1433,7 +1437,7 @@ body.mini-app-body {
 }
 
 .wifi-modal-header {
-  height: 24px;
+  height: 20px;
   background: rgba(14, 22, 42, 0.95);
   border-bottom: 1px solid rgba(0, 242, 254, 0.3);
   display: flex;
@@ -1639,7 +1643,7 @@ body.mini-app-body {
   background: rgba(14, 24, 46, 0.7);
   border: 1px solid rgba(0, 242, 254, 0.22);
   border-radius: 8px;
-  padding: 3px 6px;
+  padding: 2px 4px;
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -1648,8 +1652,8 @@ body.mini-app-body {
   box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
 }
 .btn-stepper-arrow {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   background: rgba(0, 242, 254, 0.12);
   border: 1px solid rgba(0, 242, 254, 0.3);
   border-radius: 5px;
@@ -1741,3 +1745,363 @@ body.mini-app-body {
 
 
 
+
+/* ================= 🚀 ULTRA GAMING UI UPDATE PACK ================= */
+
+/* 1. MOUSE MODE HUD INDICATOR IN TITLEBAR */
+.mouse-mode-hud {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 12px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(14, 22, 42, 0.85);
+  margin-right: auto;
+  margin-left: 8px;
+}
+
+.mouse-mode-hud:hover {
+  transform: scale(1.04);
+}
+
+.mouse-hud-led {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+}
+
+.mouse-mode-hud.pc-mode {
+  border-color: rgba(0, 255, 136, 0.5);
+  background: rgba(0, 255, 136, 0.1);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.2);
+}
+
+.mouse-mode-hud.pc-mode .mouse-hud-led {
+  background: #00ff88;
+  box-shadow: 0 0 6px #00ff88;
+}
+
+.mouse-mode-hud.pc-mode .mouse-hud-text {
+  color: #00ff88;
+}
+
+.mouse-mode-hud.phone-mode {
+  border-color: var(--cyan);
+  background: rgba(0, 242, 254, 0.18);
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+}
+
+.mouse-mode-hud.phone-mode .mouse-hud-led {
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: hud-led-pulse 1.1s infinite alternate ease-in-out;
+}
+
+@keyframes hud-led-pulse {
+  from { opacity: 0.5; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1.3); }
+}
+
+.mouse-mode-hud.phone-mode .mouse-hud-text {
+  color: #fff;
+  text-shadow: 0 0 6px var(--cyan);
+}
+
+.mouse-hud-badge {
+  font-size: 7px;
+  font-weight: 900;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+}
+
+/* 2. AUTO-DIM / STEALTH IN-GAME MODE */
+body.stealth-dimmed .mini-container {
+  opacity: 0.2;
+  filter: blur(0.3px);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), filter 0.3s;
+}
+
+body.stealth-dimmed .mini-container:hover {
+  opacity: 0.98;
+  filter: blur(0);
+}
+
+/* 3. SMART MULTI-CONTROL GRID (3-IN-1 CARD) */
+.smart-control-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  flex-shrink: 0;
+  margin: 1px 0;
+}
+
+.smart-toggle-col {
+  background: rgba(14, 22, 42, 0.7);
+  border: 1px solid rgba(0, 242, 254, 0.18);
+  border-radius: 7px;
+  padding: 3px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.smart-col-label {
+  font-size: 7px;
+  font-weight: 800;
+  color: #64748b;
+  text-align: center;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.smart-col-btns {
+  display: flex;
+  gap: 2px;
+}
+
+.smart-seg-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 3px 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.smart-seg-btn .tab-ico {
+  font-size: 8px;
+}
+
+.smart-seg-btn .tab-txt {
+  font-size: 7.5px;
+}
+
+.smart-seg-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.smart-seg-btn.active {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.22), rgba(79, 172, 254, 0.32));
+  color: #fff;
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+}
+
+/* 4. THEMES */
+body[data-theme="red"] {
+  --cyan: #ff1a40;
+  --blue: #ff5277;
+  --purple: #8b0020;
+  --border-cyber: rgba(255, 26, 64, 0.45);
+  --border-glow: 0 0 10px rgba(255, 26, 64, 0.4);
+}
+
+body[data-theme="green"] {
+  --cyan: #00ff88;
+  --blue: #00dfa2;
+  --purple: #065f46;
+  --border-cyber: rgba(0, 255, 136, 0.45);
+  --border-glow: 0 0 10px rgba(0, 255, 136, 0.4);
+}
+
+body[data-theme="dark"] {
+  --cyan: #94a3b8;
+  --blue: #cbd5e1;
+  --purple: #334155;
+  --border-cyber: rgba(148, 163, 184, 0.35);
+  --border-glow: 0 0 8px rgba(148, 163, 184, 0.25);
+}
+
+.theme-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.theme-chip {
+  background: rgba(14, 22, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  color: #94a3b8;
+  font-size: 8px;
+  font-weight: 800;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+.theme-chip:hover {
+  color: #fff;
+  border-color: var(--cyan);
+}
+
+.theme-chip.active {
+  border-color: var(--cyan);
+  color: #fff;
+  background: rgba(0, 242, 254, 0.18);
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
+}
+
+.theme-chip[data-theme="red"].active {
+  border-color: #ff1a40;
+  background: rgba(255, 26, 64, 0.2);
+  box-shadow: 0 0 8px rgba(255, 26, 64, 0.35);
+}
+
+.theme-chip[data-theme="green"].active {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.2);
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.35);
+}
+
+.theme-chip[data-theme="dark"].active {
+  border-color: #94a3b8;
+  background: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.25);
+}
+
+/* 5. RADIAL MENU OVERLAY */
+.radial-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 7, 16, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.18s ease;
+}
+
+.radial-menu-wheel {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-cyber);
+  background: radial-gradient(circle, rgba(14, 22, 42, 0.95), rgba(8, 12, 24, 0.98));
+  box-shadow: 0 0 25px rgba(0, 242, 254, 0.25), inset 0 0 20px rgba(0, 242, 254, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: popIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.7); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.radial-center-logo {
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 242, 254, 0.25), rgba(14, 22, 42, 0.95));
+  border: 1.5px solid var(--cyan);
+  box-shadow: 0 0 12px var(--cyan);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.radial-center-logo span {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.radial-center-logo small {
+  font-size: 7px;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 0.8px;
+}
+
+.radial-slice {
+  position: absolute;
+  width: 62px;
+  height: 52px;
+  background: rgba(14, 24, 46, 0.85);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.radial-slice:hover {
+  background: rgba(0, 242, 254, 0.25);
+  border-color: var(--cyan);
+  color: #fff;
+  transform: scale(1.12);
+  box-shadow: 0 0 14px var(--cyan);
+}
+
+.radial-slice .slice-icon {
+  font-size: 14px;
+}
+
+.radial-slice .slice-label {
+  font-size: 6.8px;
+  font-weight: 800;
+  margin-top: 1px;
+}
+
+/* 6 Slices Positions (Circular arrangement) */
+.slice-1 { top: 8px; left: 79px; }           /* Top Center: Ghìm Tâm */
+.slice-2 { top: 48px; right: 8px; }         /* Top Right: Sniper */
+.slice-3 { bottom: 48px; right: 8px; }      /* Bottom Right: Chụp Ảnh */
+.slice-4 { bottom: 8px; left: 79px; }        /* Bottom Center: Dịch */
+.slice-5 { bottom: 48px; left: 8px; }        /* Bottom Left: Phím HUD */
+.slice-6 { top: 48px; left: 8px; }           /* Top Left: Tản Nhiệt */
+
+/* ================= ⊟ MINI DOCK MODE (THU NHỎ MỎNG 36px) ================= */
+body.mini-dock-mode .mini-container {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-cyber) !important;
+  background: rgba(8, 12, 24, 0.96) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 242, 254, 0.3) !important;
+}
+
+body.mini-dock-mode .mini-titlebar {
+  height: 36px !important;
+  border-bottom: none !important;
+}
+
+/* ẨN TOÀN BỘ PHẦN THÂN - CHỈ GIỮ LẠI THANH TITLEBAR NHỎ GỌN */
+body.mini-dock-mode .mini-container > *:not(.mini-titlebar) {
+  display: none !important;
+}

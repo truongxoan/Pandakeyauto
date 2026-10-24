@@ -37,12 +37,12 @@
       position: absolute;
       top: 24px;
       left: 24px;
-      width: 52px;
-      height: 52px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #1c2c4c, #070d18);
-      border: 2px solid var(--cyan);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7), 0 0 16px rgba(0, 242, 254, 0.6), inset 0 0 10px rgba(0, 242, 254, 0.3);
+      border: 1.5px solid var(--cyan);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7), 0 0 12px rgba(0, 242, 254, 0.5), inset 0 0 8px rgba(0, 242, 254, 0.3);
       cursor: grab;
       z-index: 999999;
       display: flex;
@@ -54,8 +54,8 @@
     }
 
     .panda-floating-bubble:hover {
-      transform: scale(1.12);
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.8), 0 0 24px rgba(0, 242, 254, 0.9), inset 0 0 12px rgba(0, 242, 254, 0.5);
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 18px rgba(0, 242, 254, 0.8), inset 0 0 10px rgba(0, 242, 254, 0.5);
       opacity: 1 !important;
     }
 
@@ -65,33 +65,33 @@
     }
 
     .panda-icon-inner {
-      font-size: 26px;
+      font-size: 18px;
       line-height: 1;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
       pointer-events: none;
     }
 
     .panda-badge-text {
-      font-size: 7px;
-      font-weight: 900;
-      letter-spacing: 0.8px;
+      font-size: 6px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
       color: var(--cyan);
       text-transform: uppercase;
       margin-top: 1px;
-      text-shadow: 0 0 4px var(--cyan);
+      text-shadow: 0 0 3px var(--cyan);
       pointer-events: none;
     }
 
     .panda-status-dot {
       position: absolute;
-      top: 1px;
-      right: 1px;
-      width: 10px;
-      height: 10px;
+      top: 0px;
+      right: 0px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--green);
-      border: 2px solid #050b16;
-      box-shadow: 0 0 6px var(--green);
+      border: 1.5px solid #050b16;
+      box-shadow: 0 0 5px var(--green);
       transition: all 0.3s ease;
       pointer-events: none;
     }
@@ -131,12 +131,12 @@
       transform: translateX(-50%) translateY(0);
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
       background: var(--bg-dark);
       backdrop-filter: blur(16px);
       border: 1px solid var(--border-glow);
-      padding: 6px 16px;
-      border-radius: 36px;
+      padding: 10px 22px;
+      border-radius: 42px;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(0, 242, 254, 0.25);
       z-index: 100000;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -191,14 +191,14 @@
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.16);
       color: #e2e8f0;
-      font-size: 0.75rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 20px;
+      padding: 7px 16px;
+      border-radius: 24px;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       transition: all 0.18s ease;
       white-space: nowrap;
     }
@@ -462,6 +462,10 @@
     .arrow-d { right: 8px; }
 
     /* ================= 🎮 PLAY MODE (CHẾ ĐỘ CHƠI XUYÊN THẤU) ================= */
+    body.play-mode {
+      pointer-events: none;
+    }
+
     body.play-mode .overlay-toolbar {
       opacity: 0;
       pointer-events: none;
@@ -484,6 +488,7 @@
 
     body.play-mode .panda-floating-bubble {
       opacity: 0.65;
+      pointer-events: auto;
     }
 
     /* Toast Notification */
@@ -515,7 +520,7 @@
 </head>
 <body class="edit-mode">
   <!-- 🐼 Quả Cầu Panda Nổi Trên Màn Hình -->
-  <div class="panda-floating-bubble" id="pandaBubble" title="Nhấp để gán phím hoặc thu gọn (F12)">
+  <div class="panda-floating-bubble" id="pandaBubble" title="Nhấp để gán phím hoặc thu gọn">
     <div class="panda-icon-inner">🐼</div>
     <div class="panda-pulse-ring"></div>
     <div class="panda-badge-text">PANDA</div>
@@ -565,9 +570,9 @@
 
     <div class="toolbar-divider"></div>
 
-    <button class="btn-tool btn-tool-save" id="btnSaveKeymap" title="Lưu layout và bắt đầu chơi game ngay (F12)">
+    <button class="btn-tool btn-tool-save" id="btnSaveKeymap" title="Lưu layout và bắt đầu chơi game ngay">
       <span>💾</span>
-      <span>Lưu & Chơi (F12)</span>
+      <span>Lưu & Chơi</span>
     </button>
 
     <button class="btn-tool btn-tool-reset" id="btnResetKeymap" title="Khôi phục layout mặc định của game">
@@ -660,7 +665,6 @@
     });
 
     // Bắt chuột khi hover vào quả cầu ở Play mode để bấm được
-    let isMouseOverInteractive = false;
     window.addEventListener('mousemove', (e) => {
       // 1. Kéo quả cầu Panda
       if (bubbleDrag.isDragging) {
@@ -691,19 +695,8 @@
         }
         return;
       }
-
-      // 3. Xuyên thấu thông minh (Smart Click-Through) khi ở Play Mode
-      if (!isEditMode) {
-        const target = document.elementFromPoint(e.clientX, e.clientY);
-        const isHoveringWidget = target && (target.closest('#pandaBubble') || target.closest('.overlay-toolbar'));
-        if (isHoveringWidget && !isMouseOverInteractive) {
-          isMouseOverInteractive = true;
-          ipcRenderer.invoke('set-keymap-overlay-interactive', true);
-        } else if (!isHoveringWidget && isMouseOverInteractive) {
-          isMouseOverInteractive = false;
-          ipcRenderer.invoke('set-keymap-overlay-interactive', false);
-        }
-      }
+      // Play mode: CSS pointer-events:none trên body xử lý xuyên thấu hoàn toàn.
+      // Chỉ bubble panda có pointer-events:auto nên vẫn click được.
     });
 
     window.addEventListener('mouseup', () => {
@@ -742,8 +735,9 @@
         elStatusDot.classList.remove('editing');
         applyHudOpacity(hudOpacity);
         cancelRebinding();
+        // Đặt overlay hoàn toàn xuyên thấu — chỉ bubble panda nhận pointer-events qua CSS
         ipcRenderer.invoke('set-keymap-overlay-interactive', false);
-        showToast('🎮 Đang Chơi — Khóa chuột & Xuyên thấu (Nhấp Panda để sửa)');
+        showToast('🎮 Đang Chơi — Xuyên thấu (Nhấp Panda để sửa)');
       }
     }
 
@@ -942,7 +936,10 @@
     }
 
     window.addEventListener('keydown', (e) => {
-      // Phím tắt F12 toàn cục hoặc Escape
+      // Khi play-mode và không đang rebind: bỏ qua tất cả phím, không can thiệp gì
+      if (!isEditMode && !rebindingTarget) return;
+
+      // Phím tắt F12 toàn cục hoặc Escape (chỉ khi edit mode)
       if (e.key === 'F12') {
         e.preventDefault();
         saveAndPlay();
@@ -1061,7 +1058,7 @@
       ipcRenderer.invoke('toggle-keymap-overlay', false);
     });
 
-    // Nhận thông điệp từ Main process khi người dùng bấm F12 ngoài hệ điều hành
+    // Nhận thông điệp từ Main process khi người dùng chuyển chế độ gán phím
     ipcRenderer.on('toggle-edit-mode', () => {
       setEditMode(!isEditMode);
     });

@@ -21,7 +21,16 @@
         <span class="dot" id="statusDot" title="Trạng thái kết nối"></span>
       </div>
 
+      <!-- CHỈ BÁO TRẠNG THÁI CHUỘT LED NEON (CLICK HOẶC NHẤN ALT ĐỔI) -->
+      <div class="mouse-mode-hud pc-mode" id="mouseStatusIndicator" title="Phím Alt: Chuyển đổi chuột giữa Máy Tính & Điện Thoại">
+        <span class="mouse-hud-led"></span>
+        <span class="mouse-hud-text" id="mouseHudText">PC MODE</span>
+        <span class="mouse-hud-badge">ALT</span>
+      </div>
+
       <div class="titlebar-controls">
+        <button class="win-btn win-dock" id="btnToggleMiniDock" title="Thu nhỏ thành thanh Mini Dock">⊟</button>
+        <button class="win-btn win-radial" id="btnTriggerRadial" title="Bánh Xe Phím Nhanh (Radial Menu)">🎯</button>
         <button class="win-btn win-orb" id="btnToggleOrb" title="Thu nhỏ thành Quả Cầu Nổi (Orb Mode)">🔮</button>
         <button class="win-btn win-pin" id="btnPinWindow" title="Ghim luôn nổi trên cùng (Always on Top)">📌</button>
         <button class="win-btn win-expand" id="btnToggleExpand" title="Phóng to / Thu nhỏ kích thước">⤢</button>
@@ -110,29 +119,6 @@
         <button class="btn-micro-icon btn-wifi-quick" id="btnQuickWifiModal" title="Mở ô nhập địa chỉ IP Wi-Fi">📶</button>
       </div>
 
-      <!-- BỘ CHỌN KẾT NỐI: KHÓA CỨNG CÁP USB / KHÓA WI-FI / TỰ ĐỘNG -->
-      <div class="mirror-toggle-strip connection-toggle-strip" id="connToggleStrip" title="Tùy chọn kết nối: Khóa cứng Cáp USB, Khóa cứng Wi-Fi hoặc Tự động chuyển đổi">
-        <button type="button" class="strip-tab-btn active" id="btnLockConnUsb" title="Khóa cứng Cáp USB: Chỉ dùng cáp USB, tuyệt đối không nhảy sang Wi-Fi (0ms lag)">
-          <span class="tab-ico">🔒🔌</span>
-          <span class="tab-txt">Khóa USB</span>
-        </button>
-        <button type="button" class="strip-tab-btn" id="btnLockConnWifi" title="Khóa cứng Wi-Fi: Chỉ dùng Wi-Fi, không nhảy sang USB kể cả khi cắm sạc pin">
-          <span class="tab-ico">🔒📶</span>
-          <span class="tab-txt">Khóa Wi-Fi</span>
-        </button>
-        <button type="button" class="strip-tab-btn" id="btnLockConnAuto" title="Tự động linh hoạt: Ưu tiên USB, rút cáp tự động chuyển sang Wi-Fi dự phòng">
-          <span class="tab-ico">⚡</span>
-          <span class="tab-txt">Tự Động</span>
-        </button>
-      </div>
-
-      <!-- THANH 1-CLICK TỰ CẤU HÌNH WI-FI & RÚT CÁP USB (HOẶC MỞ Ô NHẬP IP) -->
-      <div class="quick-wifi-entry-bar" id="quickWifiEntryBar" title="Cắm cáp USB + kết nối chung Wi-Fi/Hotspot: Bấm vào đây để tự động cấu hình và rút cáp USB ngay lập tức!">
-        <span class="q-wifi-icon" id="qWifiIcon">⚡</span>
-        <span class="q-wifi-text" id="qWifiText">1-Click Chuyển Wi-Fi (Rút Cáp)</span>
-        <span class="q-wifi-badge" id="qWifiBadge">Tự Động</span>
-      </div>
-
       <!-- THANH CHỈ SỐ PHẦN CỨNG & PING SIÊU NHỎ -->
       <div class="hardware-monitor-bar" id="hardwareMonitorBar">
         <div class="hw-chip hw-ping" title="Độ trễ truyền tải"><span class="hw-icon">⚡</span><span id="hwPingText">0.8ms</span></div>
@@ -154,28 +140,59 @@
         <button type="button" class="btn-stepper-arrow" id="btnNextMode" title="Chế độ tiếp theo (Alt+Right)">▶</button>
       </div>
 
-      <!-- CÔNG TẮC BẬT / TẮT CHIẾU MÀN HÌNH ĐIỆN THOẠI LÊN MÁY TÍNH -->
-      <div class="mirror-toggle-strip" id="mirrorToggleStrip" title="Chọn: Chiếu toàn bộ màn hình điện thoại lên PC hoặc Không chiếu (Chỉ điều khiển trên màn thật)">
-        <button type="button" class="strip-tab-btn active" id="btnToggleMirrorOn" title="Bật chiếu toàn bộ màn hình điện thoại lên máy tính (120 FPS mượt mà)">
-          <span class="tab-ico">🖥️</span>
-          <span class="tab-txt">Chiếu Lên PC</span>
-        </button>
-        <button type="button" class="strip-tab-btn" id="btnToggleMirrorOff" title="Tắt chiếu màn hình lên PC - Nhìn thẳng màn điện thoại để chơi (0% CPU, 0ms Lag)">
-          <span class="tab-ico">📱</span>
-          <span class="tab-txt">Không Chiếu (Màn ĐT)</span>
-        </button>
+      <!-- SMART MULTI-CONTROL CARD (3-IN-1: CÁP/WIFI • CHIẾU/BẢNG ĐEN • ÂM THANH) -->
+      <div class="smart-control-grid">
+        <!-- 1. Kết Nối -->
+        <div class="smart-toggle-col" id="connToggleStrip" title="Chọn kết nối Cáp USB hoặc Wi-Fi">
+          <div class="smart-col-label">KẾT NỐI</div>
+          <div class="smart-col-btns">
+            <button type="button" class="smart-seg-btn strip-tab-btn active" id="btnLockConnUsb" title="Khóa cứng Cáp USB (0ms lag)">
+              <span class="tab-ico">🔌</span>
+              <span class="tab-txt">Cáp USB</span>
+            </button>
+            <button type="button" class="smart-seg-btn strip-tab-btn" id="btnLockConnWifi" title="Khóa cứng Wi-Fi không dây">
+              <span class="tab-ico">📶</span>
+              <span class="tab-txt">Wi-Fi</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Màn Hình -->
+        <div class="smart-toggle-col" id="mirrorToggleStrip" title="Chiếu màn hình lên PC hoặc Bảng Đen">
+          <div class="smart-col-label">MÀN HÌNH</div>
+          <div class="smart-col-btns">
+            <button type="button" class="smart-seg-btn strip-tab-btn active" id="btnToggleMirrorOn" title="Chiếu màn hình điện thoại lên PC">
+              <span class="tab-ico">🖥️</span>
+              <span class="tab-txt">Chiếu PC</span>
+            </button>
+            <button type="button" class="smart-seg-btn strip-tab-btn" id="btnToggleMirrorOff" title="Bảng Đen (Nhìn màn ĐT, 0% CPU)">
+              <span class="tab-ico">📱</span>
+              <span class="tab-txt">Bảng Đen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. Âm Thanh -->
+        <div class="smart-toggle-col audio-toggle-strip" id="audioToggleStrip" title="Truyền âm thanh sang PC hoặc Giữ trên điện thoại">
+          <div class="smart-col-label">ÂM THANH</div>
+          <div class="smart-col-btns">
+            <button type="button" class="smart-seg-btn strip-tab-btn active" id="btnToggleAudioOn" title="Truyền âm thanh sang PC">
+              <span class="tab-ico">🔊</span>
+              <span class="tab-txt">Bật Âm</span>
+            </button>
+            <button type="button" class="smart-seg-btn strip-tab-btn" id="btnToggleAudioOff" title="Tắt âm PC (Nghe trên ĐT)">
+              <span class="tab-ico">🔇</span>
+              <span class="tab-txt">Tắt Âm</span>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- CÔNG TẮC BẬT / TẮT TRUYỀN ÂM THANH QUA MÁY TÍNH -->
-      <div class="mirror-toggle-strip audio-toggle-strip" id="audioToggleStrip" title="Chọn: Truyền âm thanh điện thoại sang PC hoặc Giữ âm thanh trên điện thoại (Phím tắt: F8)">
-        <button type="button" class="strip-tab-btn active" id="btnToggleAudioOn" title="Bật truyền âm thanh từ điện thoại sang PC (F8)">
-          <span class="tab-ico">🔊</span>
-          <span class="tab-txt">Truyền Âm PC (F8)</span>
-        </button>
-        <button type="button" class="strip-tab-btn" id="btnToggleAudioOff" title="Tắt truyền âm thanh sang PC - Nghe trực tiếp trên điện thoại (F8)">
-          <span class="tab-ico">🔇</span>
-          <span class="tab-txt">Tắt Âm PC</span>
-        </button>
+      <!-- THANH 1-CLICK TỰ CẤU HÌNH WI-FI & RÚT CÁP USB -->
+      <div class="quick-wifi-entry-bar" id="quickWifiEntryBar" title="Cắm cáp USB + kết nối chung Wi-Fi/Hotspot: Bấm vào đây để tự động cấu hình và rút cáp USB ngay lập tức!">
+        <span class="q-wifi-icon" id="qWifiIcon">⚡</span>
+        <span class="q-wifi-text" id="qWifiText">1-Click Chuyển Wi-Fi (Rút Cáp)</span>
+        <span class="q-wifi-badge" id="qWifiBadge">Tự Động</span>
       </div>
 
       <!-- MASTER HERO BUTTON: BẮT ĐẦU / DỪNG LẠI (GLOWING CYBER BUTTON) -->
@@ -196,34 +213,34 @@
 
       <!-- DOCK 6 PHÍM TÁC VỤ NHANH & VIP GAMING -->
       <div class="quick-action-dock">
-        <!-- 1. Ghìm tâm tự động F6 -->
-        <button class="dock-btn" id="btnToggleRecoil" title="Bật/Tắt Ghìm Tâm Tự Động (F6)">
+        <!-- 1. Ghìm tâm tự động -->
+        <button class="dock-btn" id="btnToggleRecoil" title="Bật/Tắt Ghìm Tâm Tự Động">
           <span class="dock-icon">🎯</span>
-          <span class="dock-kbd">F6 Ghìm</span>
+          <span class="dock-kbd">Ghìm Tâm</span>
         </button>
 
-        <!-- 2. Bắn Sniper Quick-Switch F7 -->
-        <button class="dock-btn" id="btnToggleQuickSniper" title="Bật/Tắt Quick-Switch Sniper (F7)">
+        <!-- 2. Bắn Sniper Quick-Switch -->
+        <button class="dock-btn" id="btnToggleQuickSniper" title="Bật/Tắt Quick-Switch Sniper">
           <span class="dock-icon">🔫</span>
-          <span class="dock-kbd">F7 Sniper</span>
+          <span class="dock-kbd">Sniper</span>
         </button>
 
-        <!-- 3. Chụp ảnh màn hình Highlight F9 -->
-        <button class="dock-btn" id="btnCaptureInstantScreenshot" title="Chụp Ảnh Highlight Nhanh (F9)">
+        <!-- 3. Chụp ảnh màn hình Highlight -->
+        <button class="dock-btn" id="btnCaptureInstantScreenshot" title="Chụp Ảnh Highlight Nhanh">
           <span class="dock-icon">📸</span>
-          <span class="dock-kbd">F9 Chụp</span>
+          <span class="dock-kbd">Chụp Ảnh</span>
         </button>
 
-        <!-- 4. Dịch màn hình tức thì F10 -->
-        <button class="dock-btn" id="btnTriggerScreenTranslate" title="Dịch Màn Hình Game Siêu Tốc OCR (F10 / Alt+T)">
+        <!-- 4. Dịch màn hình tức thì -->
+        <button class="dock-btn" id="btnTriggerScreenTranslate" title="Dịch Màn Hình Game Siêu Tốc OCR">
           <span class="dock-icon">🌐</span>
-          <span class="dock-kbd">F10 Dịch</span>
+          <span class="dock-kbd">Dịch</span>
         </button>
 
-        <!-- 5. Phím ảo In-Game HUD F12 -->
-        <button class="dock-btn" id="btnToggleKeymapHud" title="Bật/Tắt HUD Phím Ảo Trong Game (F12)">
+        <!-- 5. Phím ảo In-Game HUD -->
+        <button class="dock-btn" id="btnToggleKeymapHud" title="Bật/Tắt HUD Phím Ảo Trong Game">
           <span class="dock-icon">⌨️</span>
-          <span class="dock-kbd">F12 Phím</span>
+          <span class="dock-kbd">Phím HUD</span>
         </button>
 
         <!-- 6. Ngăn Cài Đặt & Tiện Ích -->
@@ -395,19 +412,34 @@
         <div class="drawer-section">
           <div class="drawer-section-title"><span>🖱️ Phím Đổi Chuột:</span></div>
           <select id="selSwitchKey" class="drawer-select">
-            <option value="alt">Phím Alt (Mặc định)</option>
-            <option value="f1">Phím F1</option>
-            <option value="tilde">Phím ~ (Tilde)</option>
-            <option value="capslock">Phím Caps Lock</option>
-            <option value="ctrl">Phím Ctrl</option>
-            <option value="tab">Phím Tab</option>
-            <option value="mbutton">Chuột giữa (MButton)</option>
-            <option value="xbutton1">Chuột hông 4</option>
-            <option value="xbutton2">Chuột hông 5</option>
+            <option value="alt" selected>Phím Alt (Chuyển đổi chuột 2 chiều)</option>
           </select>
         </div>
 
         <!-- Ghìm Tâm Thông Số & Tỉ Lệ Headshot Y/X -->
+        <!-- Theme Màu Gaming -->
+        <div class="drawer-section">
+          <div class="drawer-section-title"><span>🎨 Theme Màu Gaming:</span></div>
+          <div class="theme-picker-grid">
+            <button type="button" class="theme-chip active" data-theme="cyan">Cyber Cyan</button>
+            <button type="button" class="theme-chip" data-theme="red">ROG Red</button>
+            <button type="button" class="theme-chip" data-theme="green">Matrix Green</button>
+            <button type="button" class="theme-chip" data-theme="dark">Stealth Dark</button>
+          </div>
+        </div>
+
+        <!-- Tự Động Làm Mờ Khi Vào Game -->
+        <div class="drawer-section">
+          <div class="drawer-section-title"><span>🌫️ Chế Độ Ẩn Tự Động:</span></div>
+          <div class="drawer-toggle-row">
+            <span>Tự Động Mờ Khi Vào Game (Auto-Dim):</span>
+            <label class="switch-toggle">
+              <input type="checkbox" id="chkAutoDim" checked>
+              <span class="slider-round"></span>
+            </label>
+          </div>
+        </div>
+
         <div class="drawer-section">
           <div class="drawer-section-title"><span>🎯 Ghìm Tâm & Kéo Headshot:</span></div>
           <div class="drawer-slider-row">
@@ -444,7 +476,7 @@
         <div class="drawer-section">
           <div class="drawer-section-title"><span>🔊 Âm Thanh Scrcpy Truyền PC:</span></div>
           <div class="drawer-toggle-row">
-            <span>Truyền âm thanh điện thoại sang PC (F8):</span>
+            <span>Truyền âm thanh điện thoại sang PC :</span>
             <label class="switch-toggle">
               <input type="checkbox" id="chkForwardAudio" checked>
               <span class="slider-round"></span>
@@ -490,7 +522,7 @@
             <option value="eng">Tiếng Anh (English)</option>
             <option value="chi_sim">Tiếng Trung (Chinese)</option>
           </select>
-          <span id="lblTranslatorStatus" class="drawer-status-text">Sẵn sàng (F10)</span>
+          <span id="lblTranslatorStatus" class="drawer-status-text">Sẵn sàng</span>
         </div>
 
         <!-- Đồng Bộ GitHub Gist Cloud -->

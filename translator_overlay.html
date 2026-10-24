@@ -265,9 +265,9 @@
         <span class="lang-badge" id="lblLang">TRUNG / ANH ➔ VIỆT</span>
       </div>
       <div class="header-right">
-        <button class="btn-header" id="btnRetry" title="Quét và dịch lại màn hình hiện tại (F10)">🔄 Dịch Lại</button>
+        <button class="btn-header" id="btnRetry" title="Quét và dịch lại màn hình hiện tại">🔄 Dịch Lại</button>
         <button class="btn-header" id="btnCopyAll" title="Sao chép toàn bộ bản dịch">📋 Sao Chép</button>
-        <button class="btn-header btn-close" id="btnClose" title="Đóng cửa sổ dịch (Esc / F10)">✖ Đóng</button>
+        <button class="btn-header btn-close" id="btnClose" title="Đóng cửa sổ dịch (Esc)">✖ Đóng</button>
       </div>
     </div>
 
@@ -288,7 +288,6 @@
     <div class="translator-footer">
       <span id="txtStatus">Sẵn sàng</span>
       <div class="footer-hints">
-        <span>Bấm <span class="key-badge-hint">F10</span> Dịch lại</span>
         <span>Bấm <span class="key-badge-hint">Esc</span> Đóng</span>
       </div>
     </div>
@@ -394,7 +393,7 @@
     });
 
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' || e.key === 'F10') {
+      if (e.key === 'Escape') {
         e.preventDefault();
         ipcRenderer.invoke('close-translator-overlay');
       }

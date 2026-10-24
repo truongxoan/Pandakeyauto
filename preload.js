@@ -46,6 +46,8 @@ contextBridge.exposeInMainWorld('api', {
   // Gaming Precision & Automation APIs
   setMouseRatioY: (ratio) => ipcRenderer.invoke('set-mouse-ratio-y', ratio),
   toggleCursorLock: (enabled) => ipcRenderer.invoke('toggle-cursor-lock', enabled),
+  switchMouseFocus: () => ipcRenderer.invoke('switch-mouse-focus'),
+  onMouseModeChanged: (callback) => ipcRenderer.on('mouse-mode-changed', (_event, value) => callback(value)),
 
   // VIP Phone Cooler APIs
   toggleCrosshair: (enabled) => ipcRenderer.invoke('toggle-crosshair', enabled),
