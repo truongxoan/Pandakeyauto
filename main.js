@@ -147,8 +147,8 @@ async function toggleKeymapOverlay(enable) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 340,
-    height: 450,
+    width: 320,
+    height: 420,
     minWidth: 36,
     minHeight: 36,
     backgroundColor: '#00000000',
@@ -315,19 +315,19 @@ ipcMain.handle('toggle-window-size', (event, targetSize) => {
       return { w: targetSize.w, h: targetSize.h };
     }
     const [w, h] = mainWindow.getSize();
-    if (w < 460) {
-      mainWindow.setSize(520, 680);
-      return { w: 520, h: 680, expanded: true };
+    if (w < 440) {
+      mainWindow.setSize(480, 620);
+      return { w: 480, h: 620, expanded: true };
     } else {
-      mainWindow.setSize(340, 450);
-      return { w: 340, h: 450, expanded: false };
+      mainWindow.setSize(320, 420);
+      return { w: 320, h: 420, expanded: false };
     }
   }
   return { w: 420, h: 590, expanded: false };
 });
 
 let isOrbMode = false;
-let savedPreOrbBounds = { width: 340, height: 450 };
+let savedPreOrbBounds = { width: 320, height: 420 };
 let savedWifiIp = null;
 let mouseRatioY = 1.5;
 let isCursorLocked = false;
@@ -350,8 +350,8 @@ ipcMain.handle('toggle-orb-mode', () => {
       mainWindow.setSize(48, 48);
       mainWindow.setAlwaysOnTop(true);
     } else {
-      const restoreW = (savedPreOrbBounds && savedPreOrbBounds.width >= 280) ? savedPreOrbBounds.width : 340;
-      const restoreH = (savedPreOrbBounds && savedPreOrbBounds.height >= 360) ? savedPreOrbBounds.height : 450;
+      const restoreW = (savedPreOrbBounds && savedPreOrbBounds.width >= 280) ? savedPreOrbBounds.width : 320;
+      const restoreH = (savedPreOrbBounds && savedPreOrbBounds.height >= 340) ? savedPreOrbBounds.height : 420;
       mainWindow.setMinimumSize(36, 36);
       mainWindow.setSize(restoreW, restoreH);
     }
@@ -415,13 +415,17 @@ const KNOWN_GAME_PACKAGES = {
   'com.activision.callofduty.shooter': { id: 'codm', name: 'Call of Duty: Mobile' }
 };
 
+let gamePollInFlight = false;
 function startGameDetectionPoller() {
   if (autoGamePoller) return;
   autoGamePoller = setInterval(() => {
+    if (gamePollInFlight) return; // never stack adb shells on a slow device
     const activeDev = resolveActiveAdbDevice();
     if (!activeDev) return;
+    gamePollInFlight = true;
     const target = `-s "${activeDev}"`;
     exec(`"${adbPath}" ${target} shell "dumpsys window | grep -E 'mCurrentFocus|mFocusedApp'"`, { windowsHide: true }, (err, stdout) => {
+      gamePollInFlight = false;
       if (err || !stdout) return;
       const text = stdout.toString();
       for (const [pkg, info] of Object.entries(KNOWN_GAME_PACKAGES)) {
@@ -442,10 +446,12 @@ function startGameDetectionPoller() {
         }
       }
     });
-  }, 6000);
+  }, 10000); // 6s -> 10s: game focus changes slowly, adb polling was pure overhead
 }
 
 // ================= 📊 MINI HARDWARE & LATENCY MONITOR =================
+let cachedAdbDeviceId = null; // updated async by get-devices / set-selected-device
+
 function resolveActiveAdbDevice() {
   const isAllowed = (id) => {
     if (!id) return false;
@@ -457,27 +463,22 @@ function resolveActiveAdbDevice() {
 
   if (currentOptions && currentOptions.deviceId && isAllowed(currentOptions.deviceId)) return currentOptions.deviceId;
   if (selectedAdbDeviceId && isAllowed(selectedAdbDeviceId)) return selectedAdbDeviceId;
-  try {
-    const devListStr = execSync(`"${adbPath}" devices`, { windowsHide: true }).toString();
-    const lines = devListStr.trim().split('\n').slice(1);
-    for (const l of lines) {
-      const parts = l.trim().split(/\s+/);
-      if (parts.length >= 2 && parts[1] === 'device') {
-        const id = parts[0];
-        if (isAllowed(id)) {
-          return id;
-        }
-      }
-    }
-  } catch (e) {}
+  // Was: execSync(`adb devices`) here. Both pollers call this every 6s and
+  // execSync FREEZES the Electron main process (UI + IPC) for 50-300ms a time.
+  // Now it only returns the async-refreshed cache — smooth, never blocking.
+  if (cachedAdbDeviceId && isAllowed(cachedAdbDeviceId)) return cachedAdbDeviceId;
   return null;
 }
 
+let hwPollInFlight = false;
 function queryHardwareStats() {
+  if (hwPollInFlight) return;
   const activeDev = resolveActiveAdbDevice();
   if (!activeDev) return;
+  hwPollInFlight = true;
   const target = `-s "${activeDev}"`;
   exec(`"${adbPath}" ${target} shell "dumpsys battery"`, { windowsHide: true }, (err, stdout) => {
+    hwPollInFlight = false;
     let level = 100;
     let tempC = '36.0';
     if (!err && stdout) {
@@ -505,7 +506,7 @@ function queryHardwareStats() {
 function startHardwareMonitorPoller() {
   queryHardwareStats();
   if (hardwarePoller) return;
-  hardwarePoller = setInterval(queryHardwareStats, 6000);
+  hardwarePoller = setInterval(queryHardwareStats, 8000);
 }
 
 // ================= 📶 ADVANCED WIRELESS SUITE STORAGE =================
@@ -770,6 +771,9 @@ function handleMouseSwitchOutput(out) {
   }
 }
 
+let mouseWatcherQuitting = false;
+let mouseWatcherRestarts = 0;
+
 function startMouseWatcher() {
   if (mouseWatcherProcess) return;
   const switcherPath = path.join(binDir, 'switch_mouse.exe');
@@ -781,17 +785,26 @@ function startMouseWatcher() {
       windowsHide: true
     });
 
+    // Buffer partial lines: a chunk boundary used to split e.g.
+    // "RELEASED_TO_PC" in half, silently dropping that mode change.
+    let stdoutBuffer = '';
     mouseWatcherProcess.stdout.on('data', (data) => {
-      const text = data.toString();
-      const lines = text.split('\n');
-      for (let line of lines) {
-        line = line.trim();
+      stdoutBuffer += data.toString();
+      let idx;
+      while ((idx = stdoutBuffer.indexOf('\n')) >= 0) {
+        const line = stdoutBuffer.slice(0, idx).trim();
+        stdoutBuffer = stdoutBuffer.slice(idx + 1);
         if (line) handleMouseSwitchOutput(line);
       }
     });
 
     mouseWatcherProcess.on('close', () => {
       mouseWatcherProcess = null;
+      // Auto-heal: if the watcher died mid-game the Alt toggle died with it.
+      if (!mouseWatcherQuitting && mouseWatcherRestarts < 5) {
+        mouseWatcherRestarts++;
+        setTimeout(() => { if (!mouseWatcherQuitting) startMouseWatcher(); }, 800);
+      }
     });
   } catch (err) {
     console.error('Lỗi khi chạy watcher chuột:', err);
@@ -799,6 +812,12 @@ function startMouseWatcher() {
 }
 
 function stopMouseWatcher() {
+  mouseWatcherQuitting = true;
+  // Restore clip/speed BEFORE killing, or the cursor stays clipped to the
+  // (possibly closed) scrcpy rect after the app exits.
+  try {
+    execFile(path.join(binDir, 'switch_mouse.exe'), ['--restore'], { windowsHide: true }, () => {});
+  } catch (e) {}
   if (mouseWatcherProcess) {
     try { mouseWatcherProcess.kill(); } catch (e) {}
     mouseWatcherProcess = null;
@@ -806,9 +825,19 @@ function stopMouseWatcher() {
 }
 
 function switchMouseFocus() {
+  // Single-owner channel (see switch_mouse.cs): ask the long-lived --watch
+  // process to toggle, instead of spawning a second process whose in-RAM
+  // state (isInsidePhone / saved PC cursor) disagreed with the watcher's.
+  // That split state was the main PC <-> phone mouse bug.
   try {
+    if (mouseWatcherProcess) {
+      const reqFile = path.join(os.tmpdir(), 'pandakey_mouse_toggle_request.txt');
+      fs.writeFileSync(reqFile, `${Date.now()}-${Math.random()}`, 'utf8');
+      return;
+    }
+    // Watcher not running: fall back to the one-shot toggle.
     const switcherPath = path.join(binDir, 'switch_mouse.exe');
-    execFile(switcherPath, (err, stdout) => {
+    execFile(switcherPath, [], (err, stdout) => {
       const out = stdout ? stdout.trim() : '';
       handleMouseSwitchOutput(out);
     });
@@ -877,6 +906,7 @@ ipcMain.handle('get-devices', async () => {
             const productMatch = line.match(/product:(\S+)/);
             const model = modelMatch ? modelMatch[1] : (productMatch ? productMatch[1] : 'Android Device');
             adbDevices.push({ id, state, model, isWifi, raw: line });
+            if (state === 'device' && !cachedAdbDeviceId) cachedAdbDeviceId = id;
           }
         }
       }
@@ -887,6 +917,7 @@ ipcMain.handle('get-devices', async () => {
 
 ipcMain.handle('set-selected-device', async (event, deviceId, meta = {}) => {
   selectedAdbDeviceId = deviceId;
+  cachedAdbDeviceId = deviceId || cachedAdbDeviceId;
   if (meta && meta.connectionMode && ['usb', 'wifi', 'auto'].includes(meta.connectionMode)) {
     globalConnectionLock = meta.connectionMode;
   }
