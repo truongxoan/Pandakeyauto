@@ -6,25 +6,27 @@
 
 ## 📦 TẢI FILE .EXE TRỰC TIẾP TỪ GITHUB (DÀNH CHO MÁY ĐÍCH)
 
-### 1. Tải Bản Portable .EXE Từ GitHub Releases (Khuyên Dùng Nhất)
-👉 **[Tải file .EXE tại mục GitHub Releases](https://github.com/3122380192/Pandakeyauto/releases)**
-* **`Pandakeyauto-Pro-Portable.exe`**: Bản chạy ngay độc lập, không cần cài đặt, không cần Node.js hay quyền Admin, copy vào USB mang đi mọi máy.
-* **`Pandakeyauto-Pro-Setup.exe`**: Trình cài đặt chuẩn Windows, tự động tạo lối tắt trên Desktop & Start Menu.
+### 1. Tải Bản .EXE Tại GitHub Releases (Khuyên Dùng Nhất)
+👉 **[Tải file .EXE tại mục GitHub Releases v2.3.0](https://github.com/truongxoan/Pandakeyauto/releases)**
+* **`Pandakeyauto-Pro-Portable.exe`**: Bản chạy ngay độc lập, không cần cài đặt, không cần Node.js, cắm USB mang đi mọi máy.
+* **`Pandakeyauto-Pro-Setup.exe`**: Trình cài đặt tự động (Installer), tạo biểu tượng ngoài màn hình Desktop.
+* **`Pandakeyauto.exe`**: Launcher 1 chạm siêu nhẹ có sẵn trong repository.
 
-### 2. File Launcher Nhẹ `Pandakeyauto.exe` Sẵn Trong Repo
-👉 Tải trực tiếp file [**`Pandakeyauto.exe`**](https://github.com/3122380192/Pandakeyauto/raw/master/Pandakeyauto.exe) từ trang chủ GitHub, nhấp đúp là tự động kết nối và mở app.
+### 2. Cài Đặt Toàn Bộ Thư Viện Chạy Mã Nguồn (Nếu chạy từ Source)
+Nếu bạn tải mã nguồn zip hoặc clone về:
+👉 Nhấp đúp vào **`Cai_Dat_Tat_Ca_Thu_Vien.bat`** để tự động cài đặt 100% môi trường và thư viện Node.js / npm cần thiết.
 
 ---
 
 Bạn đang ở quán net, máy tính lạ, hoặc không muốn tải giải nén thủ công? Chỉ cần mở **PowerShell** (hoặc nhấn `Win + R` > gõ `powershell`) và dán dòng lệnh duy nhất này:
 
 ```powershell
-irm https://raw.githubusercontent.com/3122380192/Pandakeyauto/master/run.ps1 | iex
+irm https://raw.githubusercontent.com/truongxoan/Pandakeyauto/master/run.ps1 | iex
 ```
 
 *Hoặc nếu chạy từ hộp thoại Command Prompt (CMD):*
 ```cmd
-powershell -ep bypass -c "irm https://raw.githubusercontent.com/3122380192/Pandakeyauto/master/run.ps1|iex"
+powershell -ep bypass -c "irm https://raw.githubusercontent.com/truongxoan/Pandakeyauto/master/run.ps1|iex"
 ```
 
 > **Cơ chế tự động:** Lệnh trên sẽ tự động đồng bộ mã nguồn mới nhất từ GitHub về máy đích, thiết lập môi trường và mở giao diện ứng dụng **hoàn toàn không có bảng đen console**.
