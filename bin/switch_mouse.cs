@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 public class SwitchMouse {
     [DllImport("user32.dll")]
@@ -220,6 +221,12 @@ public class SwitchMouse {
     public const uint KEYEVENTF_KEYUP = 0x0002;
 
     public const uint MOUSEEVENTF_LEFTDOWN = 0x0002;
+    // Sentinel in dwExtraInfo for key events WE synthesize (RCtrl/Alt release).
+    // The low-level hook must ignore those, otherwise our own release events
+    // re-enter the hook and re-trigger a toggle (Alt auto-repeat / loop bug).
+    public const int SYNTHETIC_EXTRA_INFO = 0x50414E44; // "PAND"
+    private static volatile bool suppressAltUntilUp = false;
+    private static int lastRectRefreshTick = 0;
     public const uint MOUSEEVENTF_LEFTUP   = 0x0004;
 
     public const int SW_RESTORE = 9;
@@ -257,9 +264,47 @@ public class SwitchMouse {
     }
 
     private static void SaveState(string state) {
+        // Atomic write: a one-shot process and the --watch process both touch
+        // this file; a half-written read used to desync them.
         try {
-            File.WriteAllText(GetStateFilePath(), state);
+            string file = GetStateFilePath();
+            string tmp = file + ".tmp";
+            File.WriteAllText(tmp, state);
+            if (File.Exists(file)) File.Delete(file);
+            File.Move(tmp, file);
         } catch {}
+    }
+
+    // savedPcX/Y + lastPcWindow used to live ONLY in RAM of whichever process
+    // happened to capture. A toggle run as a separate one-shot process then
+    // released to a wrong (center-screen) position with no PC window to focus.
+    // Persist them so ANY process releases exactly where the user left PC.
+    private static string GetCursorFilePath() {
+        return Path.Combine(Path.GetTempPath(), "pandakey_pc_cursor.txt");
+    }
+    private static void PersistPcCursor() {
+        try {
+            File.WriteAllText(GetCursorFilePath(),
+                savedPcX + "," + savedPcY + "," + lastPcWindow.ToInt64());
+        } catch {}
+    }
+    private static void LoadPcCursor() {
+        if (savedPcX >= 0 && savedPcY >= 0) return;
+        try {
+            string f = GetCursorFilePath();
+            if (!File.Exists(f)) return;
+            string[] parts = File.ReadAllText(f).Trim().Split(',');
+            if (parts.Length >= 2) {
+                int x, y; long h;
+                if (int.TryParse(parts[0], out x)) savedPcX = x;
+                if (int.TryParse(parts[1], out y)) savedPcY = y;
+                if (parts.Length >= 3 && long.TryParse(parts[2], out h)) lastPcWindow = new IntPtr(h);
+            }
+        } catch {}
+    }
+
+    public static string GetToggleRequestPath() {
+        return Path.Combine(Path.GetTempPath(), "pandakey_mouse_toggle_request.txt");
     }
 
     public static void UpdateScrcpyRectCache(IntPtr hwnd) {
@@ -323,19 +368,21 @@ public class SwitchMouse {
     public static void ReleaseToPc(IntPtr scrcpyHwnd) {
         try {
             isInsidePhone = false;
+            suppressAltUntilUp = true; // swallow auto-repeat + the real Alt-UP of this same press
+            LoadPcCursor();
 
             // 1. Tháo toàn bộ khóa chuột ngay lập tức
             ReleaseCapture();
             ClipCursor(IntPtr.Zero);
 
             // 2. Gửi tín hiệu ungrab cho Scrcpy (RCtrl) và nhả sạch modifier keys
-            keybd_event(VK_RCONTROL, 0x1D, KEYEVENTF_EXTENDEDKEY, 0);
-            keybd_event(VK_RCONTROL, 0x1D, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+            keybd_event(VK_RCONTROL, 0x1D, KEYEVENTF_EXTENDEDKEY, SYNTHETIC_EXTRA_INFO);
+            keybd_event(VK_RCONTROL, 0x1D, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, SYNTHETIC_EXTRA_INFO);
 
             // Nhả phím Alt, Ctrl, Shift để tuyệt đối không bị dính phím
-            keybd_event(VK_MENU, 0x38, KEYEVENTF_KEYUP, 0);
-            keybd_event(0x11, 0x1D, KEYEVENTF_KEYUP, 0); // VK_CONTROL
-            keybd_event(0x10, 0x2A, KEYEVENTF_KEYUP, 0); // VK_SHIFT
+            keybd_event(VK_MENU, 0x38, KEYEVENTF_KEYUP, SYNTHETIC_EXTRA_INFO);
+            keybd_event(0x11, 0x1D, KEYEVENTF_KEYUP, SYNTHETIC_EXTRA_INFO); // VK_CONTROL
+            keybd_event(0x10, 0x2A, KEYEVENTF_KEYUP, SYNTHETIC_EXTRA_INFO); // VK_SHIFT
 
             // 3. Khôi phục focus ứng dụng PC
             if (lastPcWindow != IntPtr.Zero && IsWindow(lastPcWindow) && lastPcWindow != scrcpyHwnd) {
@@ -380,9 +427,13 @@ public class SwitchMouse {
 
             POINT pt;
             if (GetCursorPos(out pt)) {
-                savedPcX = pt.X;
-                savedPcY = pt.Y;
+                // Only remember a PC position that is OUTSIDE the phone window;
+                // re-capturing must never overwrite it with the phone centre.
+                bool insideRect = cachedRight > cachedLeft &&
+                    pt.X >= cachedLeft && pt.X <= cachedRight && pt.Y >= cachedTop && pt.Y <= cachedBottom;
+                if (!insideRect) { savedPcX = pt.X; savedPcY = pt.Y; }
             }
+            PersistPcCursor();
 
             // 2. Kích hoạt và đưa cửa sổ Scrcpy lên foreground
             ShowWindow(scrcpyHwnd, SW_RESTORE);
@@ -413,9 +464,9 @@ public class SwitchMouse {
 
             SetCursorPos(cachedMidX, cachedMidY);
 
-            // 3. Click kích hoạt bắt chuột vào Scrcpy
-            mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-            mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+            // 3. KHÔNG gửi click chuột trái giả nữa: click đó lọt thẳng vào game
+            // (tự bắn 1 phát / bấm nhầm nút mỗi lần chuyển PC -> điện thoại).
+            // Chỉ cần focus + ClipCursor là scrcpy tự bắt chuột ở lần di/click thật đầu tiên.
 
             // 4. Khóa chặt chuột trong vùng Scrcpy
             ClipCursor(ref clipRect);
@@ -471,9 +522,26 @@ public class SwitchMouse {
         if (nCode >= 0) {
             int vkCode = Marshal.ReadInt32(lParam);
             int msg = wParam.ToInt32();
+            // Ignore key events we synthesized ourselves in ReleaseToPc()
+            try {
+                if (Marshal.ReadIntPtr(lParam, 16).ToInt64() == SYNTHETIC_EXTRA_INFO)
+                    return CallNextHookEx(_kbHookID, nCode, wParam, lParam);
+            } catch {}
 
             // Phím chuyển đổi duy nhất là phím ALT (Alt, Left Alt, Right Alt)
             bool isAltKey = (vkCode == 0x12 || vkCode == 0xA4 || vkCode == 0xA5);
+
+            // After a phone->PC release on Alt-DOWN, Windows keeps auto-repeating
+            // Alt-DOWN while the key is held, then sends one Alt-UP. In the old
+            // code those repeats were read as a fresh PC-mode Alt tap, so letting
+            // go of Alt instantly captured the mouse BACK to the phone.
+            if (suppressAltUntilUp) {
+                if (isAltKey) {
+                    if (msg == WM_KEYUP || msg == WM_SYSKEYUP) suppressAltUntilUp = false;
+                    return (IntPtr)1;
+                }
+                suppressAltUntilUp = false; // a different key means a real combo
+            }
 
             // ================= 1. KHI ĐANG Ở CHẾ ĐỘ ĐIỆN THOẠI =================
             if (isInsidePhone) {
@@ -564,13 +632,21 @@ public class SwitchMouse {
                     }
                 }
 
-                // Tự động giữ tâm khi chuột gần biên: Dùng toạ độ cache siêu tốc 0ms, không gọi Win32 API
+                // KHÔNG SetCursorPos trong hook nữa: việc giật con trỏ về giữa
+                // mỗi khi chạm biên làm mất delta lia chuột, gây xoay/giật và là
+                // nguyên nhân chuột "điên" khi chơi. ClipCursor (đặt khi capture
+                // + refresh throttled ở dưới khi cửa sổ scrcpy di chuyển/resize)
+                // là đủ để giữ chuột trong vùng điện thoại.
                 if (msg == WM_MOUSEMOVE) {
-                    MSLLHOOKSTRUCT hs = (MSLLHOOKSTRUCT)Marshal.PtrToStructure(lParam, typeof(MSLLHOOKSTRUCT));
-                    const int threshold = 25;
-                    if (hs.pt.X <= cachedLeft + threshold || hs.pt.X >= cachedRight - threshold ||
-                        hs.pt.Y <= cachedTop + threshold || hs.pt.Y >= cachedBottom - threshold) {
-                        SetCursorPos(cachedMidX, cachedMidY);
+                    int now = Environment.TickCount;
+                    if (now - lastRectRefreshTick >= 500) {
+                        lastRectRefreshTick = now;
+                        int oldL = cachedLeft, oldT = cachedTop, oldR = cachedRight, oldB = cachedBottom;
+                        UpdateScrcpyRectCache(scrcpyHwnd);
+                        if (oldL != cachedLeft || oldT != cachedTop || oldR != cachedRight || oldB != cachedBottom) {
+                            RECT clipRect2 = new RECT { Left = cachedLeft + 2, Top = cachedTop + 2, Right = cachedRight - 2, Bottom = cachedBottom - 2 };
+                            if (clipRect2.Right > clipRect2.Left && clipRect2.Bottom > clipRect2.Top) ClipCursor(ref clipRect2);
+                        }
                     }
                 }
                 return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
@@ -584,7 +660,10 @@ public class SwitchMouse {
     }
 
     public static void Main(string[] args) {
-        SnapshotPcMouseSpeed();
+        // Only snapshot when we are (believed to be) on PC. A one-shot process
+        // started while already in phone mode used to snapshot the *phone*
+        // speed as the "original PC speed" and then restore to that wrong value.
+        if (ReadState() != "phone") SnapshotPcMouseSpeed();
 
         AppDomain.CurrentDomain.ProcessExit += delegate {
             ClipCursor(IntPtr.Zero);
@@ -594,10 +673,38 @@ public class SwitchMouse {
         if (args != null && args.Length > 0 && (args[0] == "--watch" || args[0] == "--hook")) {
             string state = ReadState();
             isInsidePhone = (state == "phone");
+            if (isInsidePhone) LoadPcCursor();
 
             _kbHookID = SetKeyboardHook(_kbProc);
             _mouseHookID = SetMouseHook(_mouseProc);
             Console.WriteLine("ALT_HOOK_READY");
+
+            // Single-owner toggle channel: the Electron app (and only it) writes
+            // a fresh id to the request file; THIS process performs the toggle,
+            // so isInsidePhone / savedPc / lastPcWindow never split across
+            // processes. Also re-sync if another process changed the state file.
+            Thread syncThread = new Thread(delegate() {
+                string lastReq = "";
+                string lastState = ReadState();
+                try { if (File.Exists(GetToggleRequestPath())) lastReq = File.ReadAllText(GetToggleRequestPath()).Trim(); } catch {}
+                while (true) {
+                    try {
+                        if (File.Exists(GetToggleRequestPath())) {
+                            string req = File.ReadAllText(GetToggleRequestPath()).Trim();
+                            if (req.Length > 0 && req != lastReq) { lastReq = req; Toggle(); lastState = ReadState(); }
+                        }
+                        string st = ReadState();
+                        if (st != lastState) {
+                            lastState = st;
+                            bool wantPhone = (st == "phone");
+                            if (wantPhone != isInsidePhone) isInsidePhone = wantPhone;
+                        }
+                    } catch {}
+                    Thread.Sleep(25);
+                }
+            });
+            syncThread.IsBackground = true;
+            syncThread.Start();
 
             MSG msg;
             while (GetMessage(out msg, IntPtr.Zero, 0, 0) > 0) {
