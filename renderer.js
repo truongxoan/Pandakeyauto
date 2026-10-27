@@ -435,7 +435,10 @@ if (elBtnLockConnAuto) {
   });
 }
 
+let deviceListInFlight = false;
 async function updateDeviceList() {
+  if (deviceListInFlight) return;
+  deviceListInFlight = true;
   try {
     const res = await window.api.getDevices();
     let devices = (res && res.success && Array.isArray(res.devices)) ? res.devices : [];
@@ -593,7 +596,9 @@ async function updateDeviceList() {
     }
 
     updateConnectionModeVisuals();
+    deviceListInFlight = false;
   } catch (err) {
+    deviceListInFlight = false;
     updateFooterLog(`Lỗi kiểm tra thiết bị: ${err.message}`);
   }
 }
@@ -1997,8 +2002,10 @@ const elReset60Hz = document.getElementById('btnReset60Hz');
 
 let isBypassChargingActive = false;
 
+let batteryInFlight = false;
 async function refreshBatteryStats() {
-  if (!currentDeviceId) return;
+  if (!currentDeviceId || batteryInFlight) return;
+  batteryInFlight = true;
   try {
     const res = await window.api.getBatteryInfo({ deviceId: currentDeviceId });
     if (res.success && res.battery) {
@@ -2034,6 +2041,7 @@ async function refreshBatteryStats() {
       }
     }
   } catch (e) {}
+  batteryInFlight = false;
 }
 
 if (elBtnRefreshBattery) {
@@ -3263,11 +3271,30 @@ window.addEventListener('DOMContentLoaded', () => {
     window.api.pollHardwareStats();
   }
   setInterval(() => {
-    if (!isSessionActive) {
+    if (!isSessionActive && !document.hidden) {
       updateDeviceList();
     }
   }, 5000);
-  setInterval(refreshBatteryStats, 8000);
+  // Battery moved 8s -> 20s and skipped while hidden / in-game: main process
+  // already pushes hardware-stats every 8s, this duplicate adb poll only
+  // cost CPU and made the mini HUD stutter.
+  setInterval(() => { if (!document.hidden && !isSessionActive) refreshBatteryStats(); }, 20000);
+});
+
+// Double-click the titlebar toggles expanded <-> compact (convenience)
+const elTitlebarDbl = document.getElementById('miniTitlebar');
+if (elTitlebarDbl) {
+  elTitlebarDbl.addEventListener('dblclick', (e) => {
+    if (e.target.closest('.titlebar-controls') || e.target.closest('.mouse-mode-hud')) return;
+    const b = document.getElementById('btnToggleExpand');
+    if (b) b.click();
+  });
+}
+// Keyboard: Esc closes the settings drawer first (instead of hunting the X)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && settingsDrawer && settingsDrawer.classList.contains('open')) {
+    settingsDrawer.classList.remove('open');
+  }
 });
 
 // ================= 🚀 ULTRA GAMING UI UPDATE LOGIC =================
@@ -3334,14 +3361,14 @@ if (elBtnToggleMiniDock) {
     if (isMiniDockActive) {
       document.body.classList.add('mini-dock-mode');
       if (window.api && window.api.toggleWindowSize) {
-        await window.api.toggleWindowSize({ w: 340, h: 36 });
+        await window.api.toggleWindowSize({ w: 320, h: 36 });
       }
       elBtnToggleMiniDock.textContent = '⊞';
       elBtnToggleMiniDock.title = 'Mở rộng Dashboard';
     } else {
       document.body.classList.remove('mini-dock-mode');
       if (window.api && window.api.toggleWindowSize) {
-        await window.api.toggleWindowSize({ w: 340, h: 450 });
+        await window.api.toggleWindowSize({ w: 320, h: 420 });
       }
       elBtnToggleMiniDock.textContent = '⊟';
       elBtnToggleMiniDock.title = 'Thu nhỏ thành thanh Mini Dock';
