@@ -2105,3 +2105,38 @@ body.mini-dock-mode .mini-titlebar {
 body.mini-dock-mode .mini-container > *:not(.mini-titlebar) {
   display: none !important;
 }
+
+/* ============================================================
+   v2.3 COMPACT + SMOOTH OVERRIDES
+   - Smaller, denser HUD so everything fits 320x420 without scroll
+   - Fewer always-on animations / blurs: backdrop-filter + infinite
+     glow animations on a transparent always-on-top window were a
+     constant GPU tax even while the user was in-game.
+   ============================================================ */
+.mini-main-view { padding: 3px; gap: 2px; }
+.mini-titlebar { height: 22px; }
+.titlebar-controls { gap: 1px; }
+.win-btn { width: 17px; height: 17px; font-size: 9px; }
+/* Radial + Dock buttons move to the drawer/footer in practice; keeping all 7
+   window buttons on a 320px titlebar caused misclicks on Close. The two
+   least-used ones are hidden here (functions still exist in the drawer). */
+.win-btn.win-radial, .win-btn.win-dock { display: none; }
+.mouse-mode-hud { flex-shrink: 1; min-width: 0; }
+.mouse-hud-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.btn-hero-master { min-height: 38px; max-height: 42px; border-radius: 10px; }
+.hero-title { font-size: 13px; }
+.quick-action-dock { gap: 3px; }
+.dock-btn { padding: 3px 1px; }
+.quick-tools-strip { gap: 3px; }
+.tool-btn { padding: 2px 4px; }
+.hardware-monitor-bar { gap: 3px; }
+.smart-control-grid { gap: 3px; }
+
+/* Kill perpetual animations when the window is not hovered/focused —
+   the HUD sits next to a fullscreen game most of the time. */
+body:not(:hover) .hero-glow-ring,
+body:not(:hover) .orb-pulse-ring,
+body:not(:hover) .dot { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
